@@ -8,6 +8,8 @@ import pandas as pd
 import logging
 from datetime import datetime
 import sys
+from typing import Dict, Optional, Callable, Any, List, Union, TypeVar, Tuple, cast
+from types import ModuleType
 
 # Configure logging
 logging.basicConfig(
@@ -18,7 +20,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def load_collector_module(file_path):
+# Type definitions
+ExtractFunc = Callable[[], Optional[pd.DataFrame]]
+
+def load_collector_module(file_path: str) -> Optional[ModuleType]:
     """
     Load a Python module from file path
     
@@ -31,6 +36,10 @@ def load_collector_module(file_path):
     try:
         module_name = os.path.basename(file_path).replace('.py', '')
         spec = importlib.util.spec_from_file_location(module_name, file_path)
+        if spec is None or spec.loader is None:
+            logger.error(f"Could not create module spec for {file_path}")
+            return None
+            
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         return module
@@ -38,7 +47,7 @@ def load_collector_module(file_path):
         logger.error(f"Error loading module {file_path}: {e}")
         return None
 
-def find_data_extraction_function(module):
+def find_data_extraction_function(module: ModuleType) -> Optional[ExtractFunc]:
     """
     Find the function that extracts data in a collector module
     
@@ -58,9 +67,9 @@ def find_data_extraction_function(module):
             if extract_func is not None:
                 break
     
-    return extract_func
+    return cast(Optional[ExtractFunc], extract_func)
 
-def run_collectors(collectors_dir='collectors'):
+def run_collectors(collectors_dir: str = 'collectors') -> Dict[str, pd.DataFrame]:
     """
     Run all collector scripts in the specified directory
     
@@ -70,7 +79,7 @@ def run_collectors(collectors_dir='collectors'):
     Returns:
         Dictionary mapping collector names to DataFrames
     """
-    results = {}
+    results: Dict[str, pd.DataFrame] = {}
     
     # Ensure the collectors directory exists
     collectors_dir = os.path.abspath(collectors_dir)
@@ -79,7 +88,7 @@ def run_collectors(collectors_dir='collectors'):
         return results
     
     # Find all Python files in the collectors directory
-    collector_files = [
+    collector_files: List[str] = [
         os.path.join(collectors_dir, f) for f in os.listdir(collectors_dir)
         if f.endswith('.py') and not f.startswith('__')
     ]
@@ -115,7 +124,7 @@ def run_collectors(collectors_dir='collectors'):
     
     return results
 
-def merge_data(data_dict, output_file='stacking_sats_data.parquet'):
+def merge_data(data_dict: Dict[str, pd.DataFrame], output_file: str = 'stacking_sats_data.parquet') -> bool:
     """
     Merge all collected data into a single parquet file
     
@@ -137,7 +146,7 @@ def merge_data(data_dict, output_file='stacking_sats_data.parquet'):
             os.makedirs(output_dir, exist_ok=True)
         
         # Add source column to each DataFrame
-        merged_dfs = []
+        merged_dfs: List[pd.DataFrame] = []
         for source, df in data_dict.items():
             df_copy = df.copy()
             if not df_copy.index.name:
@@ -168,7 +177,7 @@ def merge_data(data_dict, output_file='stacking_sats_data.parquet'):
         print(traceback.format_exc())
         return False
 
-def main():
+def main() -> int:
     """Main function to run all collectors and merge data"""
     # Ensure data directory exists
     data_dir = os.path.abspath("data")

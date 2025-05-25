@@ -8,11 +8,13 @@ from datetime import datetime
 import requests
 from io import StringIO
 import argparse
+import sys
+from typing import Optional, Dict, Any, Union, List, Tuple
 
 # Get logger
 logger = logging.getLogger(__name__)
 
-def extract_btc_data(url="https://raw.githubusercontent.com/coinmetrics/data/master/csv/btc.csv"):
+def extract_data(url: str = "https://raw.githubusercontent.com/coinmetrics/data/master/csv/btc.csv") -> Optional[pd.DataFrame]:
     """
     Extract Bitcoin data from CoinMetrics GitHub repository
     
@@ -48,7 +50,7 @@ def extract_btc_data(url="https://raw.githubusercontent.com/coinmetrics/data/mas
         logger.error(f"Unexpected error: {e}")
         return None
 
-def save_btc_data(df, csv_path=None, parquet_path=None):
+def save_data(df: Optional[pd.DataFrame], csv_path: Optional[str] = None, parquet_path: Optional[str] = None) -> bool:
     """
     Save Bitcoin data to CSV and/or Parquet format
     
@@ -89,7 +91,7 @@ def save_btc_data(df, csv_path=None, parquet_path=None):
     
     return success
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
     """Parse command line arguments"""
     parser = argparse.ArgumentParser(description='Download Bitcoin data from CoinMetrics')
     parser.add_argument('--csv', dest='csv_path', default='btc_data.csv',
@@ -110,15 +112,15 @@ def parse_arguments():
         
     return args
 
-def main():
+def main() -> int:
     """Main function to run the script"""
     args = parse_arguments()
     
     logger.info("Starting Bitcoin data extraction")
-    btc_df = extract_btc_data(args.url)
+    btc_df = extract_data(args.url)
     
     if btc_df is not None:
-        save_btc_data(btc_df, args.csv_path, args.parquet_path)
+        save_data(btc_df, args.csv_path, args.parquet_path)
         logger.info(f"Data shape: {btc_df.shape}")
         logger.info(f"Date range: {btc_df.index.min()} to {btc_df.index.max()}")
     else:
@@ -129,4 +131,4 @@ def main():
 
 if __name__ == "__main__":
     exit_code = main()
-    exit(exit_code)
+    sys.exit(exit_code)

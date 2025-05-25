@@ -40,6 +40,21 @@ python coinmetrics.py --csv custom_btc.csv --parquet custom_btc.parquet
 python coinmetrics.py --csv none
 ```
 
+### Type Checking with Mypy
+
+This repository uses type hints and supports static type checking with mypy:
+
+```bash
+# Install mypy
+pip install mypy types-requests
+
+# Run type checking
+python run_type_check.py
+
+# Or run mypy directly
+mypy main.py collectors
+```
+
 ### Features
 
 - Automatic collection from multiple data sources
@@ -48,6 +63,7 @@ python coinmetrics.py --csv none
 - Support for both CSV and Parquet formats
 - Configurable data sources and outputs
 - Detailed logging
+- Static type checking with mypy
 
 ## Getting Started
 
