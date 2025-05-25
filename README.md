@@ -14,6 +14,17 @@ The Stacking Sats Challenge focuses on developing dynamic Bitcoin accumulation s
 
 ## Tools
 
+### Main Data Collection Script
+
+`main.py` automatically runs all collectors in the `collectors/` directory and merges their results into a single Parquet file:
+
+```bash
+# Run all collectors and merge data
+python main.py
+```
+
+The merged data will be saved in the `data/` directory with a timestamp in the filename.
+
 ### CoinMetrics Data Extractor
 
 `coinmetrics.py` is a robust tool for downloading and processing Bitcoin data from CoinMetrics:
@@ -31,6 +42,8 @@ python coinmetrics.py --csv none
 
 ### Features
 
+- Automatic collection from multiple data sources
+- Merged dataset with source tracking
 - Robust error handling for network and parsing issues
 - Support for both CSV and Parquet formats
 - Configurable data sources and outputs
@@ -40,7 +53,7 @@ python coinmetrics.py --csv none
 
 1. Clone this repository
 2. Install dependencies: `pip install -r requirements.txt`
-3. Run the data extraction tools to build your dataset
+3. Run the main script to collect and merge all data: `python main.py`
 4. Use the prepared data for your strategy development
 
 ## Integration with Challenge

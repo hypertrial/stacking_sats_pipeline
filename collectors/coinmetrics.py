@@ -9,12 +9,7 @@ import requests
 from io import StringIO
 import argparse
 
-# Configure logging
-logging.basicConfig(
-    format='%(asctime)s %(levelname)-8s %(message)s',
-    level=logging.INFO,
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
+# Get logger
 logger = logging.getLogger(__name__)
 
 def extract_btc_data(url="https://raw.githubusercontent.com/coinmetrics/data/master/csv/btc.csv"):
@@ -93,22 +88,6 @@ def save_btc_data(df, csv_path=None, parquet_path=None):
             logger.error(f"Error saving Parquet file: {e}")
     
     return success
-
-def extract_btc_data_to_files(csv_path=None, parquet_path='btc_data.parquet'):
-    """
-    Extract Bitcoin data and save to specified formats
-    
-    Args:
-        csv_path: Path to save CSV file (None to skip)
-        parquet_path: Path to save Parquet file (None to skip)
-        
-    Returns:
-        DataFrame containing the Bitcoin data or None if extraction failed
-    """
-    btc_df = extract_btc_data()
-    if btc_df is not None:
-        save_btc_data(btc_df, csv_path, parquet_path)
-    return btc_df
 
 def parse_arguments():
     """Parse command line arguments"""
