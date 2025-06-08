@@ -1,99 +1,143 @@
 # Stacking Sats Pipeline
 
-A Bitcoin DCA strategy backtesting pipeline that validates and tests strategies against historical price data.
+A Bitcoin DCA strategy backtesting framework for testing strategies against historical price data.
 
 ## Quick Start
 
+### Library Interface (Recommended)
+
+```python
+from stacking_sats_pipeline import backtest, strategy
+
+# Simple function approach
+def my_strategy(df):
+    """Calculate weights based on price data"""
+    # Your strategy logic here
+    return weights
+
+results = backtest(my_strategy)
+results.summary()
+results.plot()
+
+# Or use decorator approach
+@strategy(name="My Strategy", auto_backtest=True)
+def my_strategy(df):
+    return weights
+```
+
+### Interactive Tutorial
+
 ```bash
-# Install dependencies
+pip install marimo
+marimo edit tutorials/examples.py
+```
+
+### Command Line
+
+```bash
 pip install -r requirements.txt
-
-# Run pipeline with default strategy
-python main.py
-
-# Test your custom strategy
 python main.py --strategy path/to/your_strategy.py
 ```
 
-## Pipeline Commands
+## Usage Examples
 
-### Basic Backtesting
-```bash
-# Run full pipeline with validation and plots
-python main.py --strategy strategy/strategy_template.py
+### Basic Strategy
 
-# Skip visualization for faster execution
-python main.py --strategy your_strategy.py --no-plot
+```python
+def simple_ma_strategy(df):
+    """Buy more when price is below 200-day moving average"""
+    df = df.copy()
+    past_price = df["PriceUSD"].shift(1)
+    df["ma200"] = past_price.rolling(window=200, min_periods=1).mean()
+    
+    base_weight = 1.0 / len(df)
+    weights = pd.Series(base_weight, index=df.index)
+    
+    # Buy 50% more when below MA
+    below_ma = df["PriceUSD"] < df["ma200"]
+    weights[below_ma] *= 1.5
+    
+    return weights / weights.sum()
 
-# Run with custom cycle length
-python main.py --strategy your_strategy.py --cycle-years 2
+results = backtest(simple_ma_strategy)
 ```
 
-### Simulation Mode
-```bash
-# Run accumulation simulation
-python main.py --strategy your_strategy.py --simulate
+### Quick Comparison
 
-# Custom budget simulation
-python main.py --strategy your_strategy.py --simulate --budget 1000000
+```python
+strategy1_perf = quick_backtest(strategy1)
+strategy2_perf = quick_backtest(strategy2)
 ```
 
-### Weight Allocation Calculator
-```bash
-# Calculate daily allocations for a specific period and budget
-python -m weights.weight_calculator 1000 2024-01-01 2024-01-31
+### Custom Parameters
 
-# Save allocation data to CSV
-python -m weights.weight_calculator 5000 2024-03-01 2024-03-31 --save
-
-# Custom filename for CSV export
-python -m weights.weight_calculator 1000 2024-06-01 2024-06-30 --save --filename my_allocation.csv
-```
-
-## Pipeline Architecture
-
-```
-├── main.py                    # Pipeline orchestrator
-├── config.py                  # Configuration constants
-├── backtest/
-│   ├── checks.py             # Strategy validation & SPD calculation
-│   └── simulation.py         # Bitcoin accumulation simulation
-├── data/
-│   └── data_loader.py        # BTC price data pipeline
-├── plot/
-│   └── plotting.py           # Visualization pipeline
-├── strategy/
-│   └── strategy_template.py   # Reference strategy implementation
-└── weights/
-    └── weight_calculator.py   # Weight allocation calculator
+```python
+results = backtest(
+    my_strategy,
+    start_date="2021-01-01",
+    end_date="2023-12-31",
+    cycle_years=2
+)
 ```
 
 ## Strategy Requirements
 
-Your strategy file must implement:
+Your strategy function must:
 
 ```python
-from config import BACKTEST_START, BACKTEST_END, CYCLE_YEARS
-
-def compute_weights(df: pd.DataFrame, *, cycle_years: int = CYCLE_YEARS) -> pd.Series:
-    """Return daily investment weights that sum to 1.0 per cycle."""
-    # Your strategy logic here
-    return weights_series
+def your_strategy(df: pd.DataFrame) -> pd.Series:
+    """
+    Args:
+        df: DataFrame with 'PriceUSD' column and datetime index
+        
+    Returns:
+        pd.Series with weights that sum to 1.0 per cycle
+    """
+    # Your logic here
+    return weights
 ```
 
-**Pipeline Validation Rules:**
-- Weights must sum to 1.0 within each cycle
-- All weights must be positive (≥ 1e-5)
-- No forward-looking data usage
-- Must return pandas Series indexed by date
+**Validation Rules:**
+- Weights sum to 1.0 within each cycle
+- All weights positive (≥ 1e-5)
+- No forward-looking data
+- Return pandas Series indexed by date
 
-## Pipeline Output
+## Command Line Options
 
-The pipeline generates:
-- **Validation Report**: Strategy constraint compliance
-- **Performance Metrics**: SPD (Sats Per Dollar) statistics per cycle
-- **Comparative Analysis**: vs Uniform DCA and Static DCA (30th percentile)
-- **Visualizations**: Weight distribution and feature plots (unless `--no-plot`)
+```bash
+# Basic usage
+python main.py --strategy your_strategy.py
+
+# Skip plots
+python main.py --strategy your_strategy.py --no-plot
+
+# Run simulation
+python main.py --strategy your_strategy.py --simulate --budget 1000000
+
+# Weight calculator
+python -m weights.weight_calculator 1000 2024-01-01 2024-01-31 --save
+```
+
+## Project Structure
+
+```
+├── main.py              # Pipeline orchestrator
+├── tutorials/examples.py # Interactive notebook
+├── backtest/            # Validation & simulation
+├── data/                # Price data pipeline
+├── plot/                # Visualization
+├── strategy/            # Strategy templates
+└── weights/             # Allocation calculator
+```
+
+## Output
+
+The pipeline provides:
+- **Validation Report**: Strategy compliance
+- **Performance Metrics**: SPD (Sats Per Dollar) statistics
+- **Comparative Analysis**: vs Uniform DCA and Static DCA
+- **Visualizations**: Weight distribution plots
 
 ### Example Output
 ```
@@ -102,60 +146,10 @@ COMPREHENSIVE STRATEGY VALIDATION
 ============================================================
 ✅ ALL VALIDATION CHECKS PASSED
 
-Aggregated Metrics for Your Strategy:
-Dynamic SPD:
-  mean: 4510.21
-  median: 2804.03
-Dynamic SPD Percentile:
-  mean: 39.35%
-  median: 43.80%
+Your Strategy Performance:
+Dynamic SPD: mean=4510.21, median=2804.03
+Dynamic SPD Percentile: mean=39.35%, median=43.80%
 
 Mean Excess vs Uniform DCA: -0.40%
 Mean Excess vs Static DCA: 9.35%
 ```
-
-## Weight Allocation Calculator
-
-The weights module provides a standalone calculator for determining daily Bitcoin allocation amounts based on your strategy and a specific budget.
-
-### Features
-- **Flexible Date Ranges**: Calculate allocations for any period within the available data
-- **Budget-Based Allocation**: Specify total USD budget to allocate across the period
-- **Detailed Breakdown**: Shows daily weights, USD amounts, BTC prices, and BTC quantities
-- **CSV Export**: Save allocation data for further analysis or implementation
-
-### Example Output
-```
-=== Allocation Weights from 2024-01-01 to 2024-01-31 ===
-Total budget: $1,000.00
-Total days: 31
-Total weight: 0.0847
-Average daily weight: 0.0027
-Average daily allocation: $32.26
-
-Daily Breakdown:
-Date         Weight   Weight %   USD Amount   BTC Price    BTC Amount  
-2024-01-01   0.0027   0.27      % $2.73        $44049.47    0.000062    
-2024-01-02   0.0027   0.27      % $2.73        $44941.16    0.000061    
-...
-TOTAL        0.0847   8.47      % $1000.00                  0.001978
-```
-
-### Weight Calculator Options
-
-| Argument | Description |
-|----------|-------------|
-| `budget` | Total USD budget to allocate across the period |
-| `start_date` | Start date in YYYY-MM-DD format |
-| `end_date` | End date in YYYY-MM-DD format |
-| `--save, -s` | Save allocation data to CSV file |
-| `--filename, -f` | Custom CSV filename (optional) |
-
-## Command Options
-
-| Flag | Description |
-|------|-------------|
-| `--strategy` | Path to strategy Python file |
-| `--no-plot` | Skip plot generation |
-| `--simulate` | Run accumulation simulation |
-| `--budget` | Annual budget for simulation (default: $10M) |
