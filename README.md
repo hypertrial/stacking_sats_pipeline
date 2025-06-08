@@ -38,6 +38,18 @@ python main.py --strategy your_strategy.py --simulate
 python main.py --strategy your_strategy.py --simulate --budget 1000000
 ```
 
+### Weight Allocation Calculator
+```bash
+# Calculate daily allocations for a specific period and budget
+python -m weights.weight_calculator 1000 2024-01-01 2024-01-31
+
+# Save allocation data to CSV
+python -m weights.weight_calculator 5000 2024-03-01 2024-03-31 --save
+
+# Custom filename for CSV export
+python -m weights.weight_calculator 1000 2024-06-01 2024-06-30 --save --filename my_allocation.csv
+```
+
 ## Pipeline Architecture
 
 ```
@@ -50,8 +62,10 @@ python main.py --strategy your_strategy.py --simulate --budget 1000000
 │   └── data_loader.py        # BTC price data pipeline
 ├── plot/
 │   └── plotting.py           # Visualization pipeline
-└── strategy/
-    └── strategy_template.py   # Reference strategy implementation
+├── strategy/
+│   └── strategy_template.py   # Reference strategy implementation
+└── weights/
+    └── weight_calculator.py   # Weight allocation calculator
 ```
 
 ## Strategy Requirements
@@ -99,6 +113,43 @@ Dynamic SPD Percentile:
 Mean Excess vs Uniform DCA: -0.40%
 Mean Excess vs Static DCA: 9.35%
 ```
+
+## Weight Allocation Calculator
+
+The weights module provides a standalone calculator for determining daily Bitcoin allocation amounts based on your strategy and a specific budget.
+
+### Features
+- **Flexible Date Ranges**: Calculate allocations for any period within the available data
+- **Budget-Based Allocation**: Specify total USD budget to allocate across the period
+- **Detailed Breakdown**: Shows daily weights, USD amounts, BTC prices, and BTC quantities
+- **CSV Export**: Save allocation data for further analysis or implementation
+
+### Example Output
+```
+=== Allocation Weights from 2024-01-01 to 2024-01-31 ===
+Total budget: $1,000.00
+Total days: 31
+Total weight: 0.0847
+Average daily weight: 0.0027
+Average daily allocation: $32.26
+
+Daily Breakdown:
+Date         Weight   Weight %   USD Amount   BTC Price    BTC Amount  
+2024-01-01   0.0027   0.27      % $2.73        $44049.47    0.000062    
+2024-01-02   0.0027   0.27      % $2.73        $44941.16    0.000061    
+...
+TOTAL        0.0847   8.47      % $1000.00                  0.001978
+```
+
+### Weight Calculator Options
+
+| Argument | Description |
+|----------|-------------|
+| `budget` | Total USD budget to allocate across the period |
+| `start_date` | Start date in YYYY-MM-DD format |
+| `end_date` | End date in YYYY-MM-DD format |
+| `--save, -s` | Save allocation data to CSV file |
+| `--filename, -f` | Custom CSV filename (optional) |
 
 ## Command Options
 
