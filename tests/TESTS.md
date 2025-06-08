@@ -12,6 +12,7 @@ The test suite is built using pytest and covers all major components of the pipe
 - **Configuration and metadata** (`test_config.py`)
 - **Plotting and visualization** (`test_plot.py`)
 - **Strategy computation** (`test_strategy.py`)
+- **Weight calculation and historical data constraints** (`test_weight_calculator.py`)
 
 ## Quick Start
 
@@ -69,6 +70,7 @@ pytest -m integration
 | `test_config.py` | Configuration and metadata | Package metadata, constants validation |
 | `test_plot.py` | Plotting and visualization | Chart generation, matplotlib integration |
 | `test_strategy.py` | Strategy computation | Weight calculation, feature construction |
+| `test_weight_calculator.py` | Weight calculator functionality | Historical data constraints, date validation, CSV export |
 
 ## Detailed Test Documentation
 
@@ -300,6 +302,98 @@ Tests custom strategy patterns:
   - Tests trend-following strategy
   - Validates price change calculations
 
+### Weight Calculator Tests (`test_weight_calculator.py`)
+
+#### TestDateValidation
+Tests date range validation for historical data limits:
+
+- **Valid Date Ranges**: `test_validate_date_range_valid_dates()`
+  - Tests `validate_date_range()` with dates within available data
+  - Validates multiple valid date range scenarios
+
+- **Start Date Before Data**: `test_validate_date_range_start_before_data()`
+  - Tests rejection of start dates before historical data begins
+  - Validates proper error messages
+
+- **End Date After Data**: `test_validate_date_range_end_after_data()`
+  - Tests rejection of end dates after historical data ends
+  - Ensures future dates are properly rejected
+
+- **Both Dates Outside Data**: `test_validate_date_range_both_outside_data()`
+  - Tests scenarios where both dates are outside available range
+
+- **Edge Cases**: `test_validate_date_range_edge_cases()`
+  - Tests exact boundary dates
+  - Single day requests at data boundaries
+
+#### TestHistoricalDataLoading
+Tests historical data loading with validation:
+
+- **Mocked Data Loading**: `test_get_historical_btc_data_mocked()`
+  - Tests `get_historical_btc_data()` with mocked data
+  - Validates data structure and loading process
+
+- **Valid Period Loading**: `test_get_historical_data_for_period_valid()`
+  - Tests loading data for valid date ranges
+  - Validates data filtering and validation pipeline
+
+- **Invalid Period Handling**: `test_get_historical_data_for_period_invalid()`
+  - Tests proper error handling for invalid date ranges
+
+#### TestWeightCalculation
+Tests weight calculation functions with historical data constraints:
+
+- **Valid Range Calculation**: `test_get_weights_for_period_valid_range()`
+  - Tests `get_weights_for_period()` with valid dates
+  - Validates weight calculation pipeline
+
+- **Invalid Range Rejection**: `test_get_weights_for_period_invalid_range()`
+  - Tests proper error handling for invalid date ranges
+  - Ensures historical constraints are enforced
+
+- **Display Function Constraints**: `test_display_weights_historical_constraint()`
+  - Tests that `display_weights()` respects historical limits
+
+#### TestHistoricalDataConstraints
+Tests enforcement of historical data constraints across functions:
+
+- **Future Date Rejection**: `test_future_dates_rejected()`
+  - Tests that future dates are properly rejected
+  - Validates error messages for out-of-range dates
+
+- **Very Old Date Rejection**: `test_very_old_dates_rejected()`
+  - Tests rejection of dates before Bitcoin existed
+  - Validates historical data boundaries
+
+- **CSV Export Constraints**: `test_csv_export_historical_constraint()`
+  - Tests that CSV export respects historical data limits
+  - Validates file creation and parameter passing
+
+#### TestErrorHandling
+Tests error handling in weight calculator functions:
+
+- **Malformed Date Strings**: `test_malformed_date_strings()`
+  - Tests handling of invalid date formats
+  - Ensures system doesn't crash on bad input
+
+- **Reversed Date Range**: `test_reversed_date_range()`
+  - Tests handling when start_date > end_date
+
+- **Empty DataFrame Handling**: `test_empty_dataframe_handling()`
+  - Tests graceful handling of empty data scenarios
+
+#### TestIntegrationWithRealConstraints
+Integration tests with actual data constraints:
+
+- **Real Data Constraints**: `test_real_data_constraints()` (integration test)
+  - Tests with actual historical data loading
+  - Validates real data boundaries and constraints
+  - Tests boundary conditions with actual data ranges
+
+- **Current Date Boundary**: `test_current_date_boundary()` (integration test)
+  - Tests that current/future dates are properly handled
+  - Validates real-time constraint enforcement
+
 ## Test Configuration
 
 ### pytest Configuration (`pyproject.toml`)
@@ -348,6 +442,9 @@ pytest tests/test_plot.py
 
 # Strategy computation
 pytest tests/test_strategy.py
+
+# Weight calculator functionality
+pytest tests/test_weight_calculator.py
 
 # Configuration
 pytest tests/test_config.py
@@ -434,6 +531,7 @@ The test suite aims for comprehensive coverage of:
 - ✅ Data loading and validation
 - ✅ CLI argument parsing and execution
 - ✅ Strategy computation and validation
+- ✅ Weight calculator and historical data constraints
 - ✅ Plotting and visualization
 - ✅ Configuration and metadata
 - ✅ Error handling and edge cases
