@@ -37,7 +37,7 @@ def load_btc_data_from_web() -> pd.DataFrame:
         resp.raise_for_status()
 
         # Process data directly in memory
-        btc_df = pd.read_csv(StringIO(resp.text))
+        btc_df = pd.read_csv(StringIO(resp.text), low_memory=False)
         btc_df["time"] = pd.to_datetime(btc_df["time"]).dt.normalize()
         btc_df["time"] = btc_df["time"].dt.tz_localize(None)
         btc_df.set_index("time", inplace=True)
