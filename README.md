@@ -2,6 +2,12 @@
 
 A Bitcoin DCA strategy backtesting framework for testing strategies against historical price data.
 
+## Installation
+
+```bash
+pip install stacking-sats-pipeline
+```
+
 ## Quick Start
 
 ### Library Interface
@@ -37,8 +43,7 @@ marimo edit tutorials/examples.py
 ### Command Line
 
 ```bash
-pip install -r requirements.txt
-python main.py --strategy path/to/your_strategy.py
+stacking-sats --strategy path/to/your_strategy.py
 ```
 
 ## Usage Examples
@@ -105,27 +110,24 @@ def your_strategy(df: pd.DataFrame) -> pd.Series:
 - No forward-looking data
 - Return pandas Series indexed by date
 
-## Testing
+## Development
 
-The project includes a comprehensive test suite covering all major functionality:
+For development and testing:
 
 ```bash
-# Install development dependencies
+# Clone the repository
+git clone https://github.com/hypertrial/stacking_sats_pipeline.git
+cd stacking_sats_pipeline
+
+# Install in development mode
 pip install -e ".[dev]"
 
-# Run all tests
+# Run tests
 pytest
 
 # Run specific test categories
 pytest -m "not integration"  # Skip integration tests
 pytest -m integration        # Run only integration tests
-
-# Run tests with coverage
-pytest --cov=stacking_sats_pipeline
-
-# Run specific test files
-pytest tests/test_backtest.py
-pytest tests/test_strategy.py
 ```
 
 For detailed testing documentation, see [TESTS.md](TESTS.md).
@@ -134,28 +136,30 @@ For detailed testing documentation, see [TESTS.md](TESTS.md).
 
 ```bash
 # Basic usage
-python main.py --strategy your_strategy.py
+stacking-sats --strategy your_strategy.py
 
 # Skip plots
-python main.py --strategy your_strategy.py --no-plot
+stacking-sats --strategy your_strategy.py --no-plot
 
 # Run simulation
-python main.py --strategy your_strategy.py --simulate --budget 1000000
+stacking-sats --strategy your_strategy.py --simulate --budget 1000000
 
-# Historical weight calculator (coinmetrics data only)
-python -m weights.weight_calculator 1000 2020-01-01 2023-12-31 --save
+# Show help
+stacking-sats --help
 ```
 
 ## Project Structure
 
 ```
-├── main.py              # Pipeline orchestrator
+├── stacking_sats_pipeline/
+│   ├── main.py          # Pipeline orchestrator
+│   ├── backtest/        # Validation & simulation
+│   ├── data/            # Price data pipeline (in-memory loading)
+│   ├── plot/            # Visualization
+│   ├── strategy/        # Strategy templates
+│   └── weights/         # Historical allocation calculator
 ├── tutorials/examples.py # Interactive notebook
-├── backtest/            # Validation & simulation
-├── data/                # Price data pipeline (in-memory loading)
-├── plot/                # Visualization
-├── strategy/            # Strategy templates
-└── weights/             # Historical allocation calculator
+└── tests/               # Comprehensive test suite
 ```
 
 ## Output

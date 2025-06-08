@@ -9,17 +9,11 @@ This guide covers the complete process for deploying and updating the `stacking-
 pip install --upgrade pip build twine
 ```
 
-### 2. Create PyPI Accounts
-- **Test PyPI**: https://test.pypi.org/account/register/
+### 2. Create PyPI Account
 - **Production PyPI**: https://pypi.org/account/register/
 
-### 3. Generate API Tokens
+### 3. Generate API Token
 For security, use API tokens instead of passwords:
-
-**Test PyPI:**
-1. Go to https://test.pypi.org/manage/account/token/
-2. Create new token with scope "Entire account"
-3. Save the token (starts with `pypi-`)
 
 **Production PyPI:**
 1. Go to https://pypi.org/manage/account/token/
@@ -32,16 +26,10 @@ Create `~/.pypirc` file:
 [distutils]
 index-servers =
     pypi
-    testpypi
 
 [pypi]
 username = __token__
 password = pypi-YOUR_PRODUCTION_TOKEN_HERE
-
-[testpypi]
-repository = https://test.pypi.org/legacy/
-username = __token__
-password = pypi-YOUR_TEST_TOKEN_HERE
 ```
 
 ## Deployment Steps
@@ -99,29 +87,12 @@ This creates:
 - `dist/stacking_sats_pipeline-X.X.X-py3-none-any.whl` (wheel)
 - `dist/stacking-sats-pipeline-X.X.X.tar.gz` (source distribution)
 
-### Step 6: Test Upload to Test PyPI
-```bash
-# Upload to Test PyPI first
-python -m twine upload --repository testpypi dist/*
-
-# Test installation from Test PyPI
-pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ stacking-sats-pipeline
-
-# Test the installation
-python -c "import stacking_sats_pipeline; print(f'Version: {stacking_sats_pipeline.__version__}')"
-
-# Test CLI command
-stacking-sats --help
-```
-
-### Step 7: Upload to Production PyPI
-If Test PyPI worked correctly:
+### Step 6: Upload to Production PyPI
 ```bash
 # Upload to Production PyPI
 python -m twine upload dist/*
 
 # Test installation from Production PyPI
-pip uninstall stacking-sats-pipeline  # Remove test version first
 pip install stacking-sats-pipeline
 
 # Verify installation
@@ -227,8 +198,6 @@ jobs:
 # Complete deployment in one go:
 rm -rf dist/ build/ *.egg-info/
 python -m build
-python -m twine upload --repository testpypi dist/*
-# Test, then:
 python -m twine upload dist/*
 ```
 
