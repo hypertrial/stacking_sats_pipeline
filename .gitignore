@@ -172,7 +172,5 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
-*.parquet
 *.csv
-
-/data
+.DS_Store

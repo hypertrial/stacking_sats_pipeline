@@ -1,210 +1,215 @@
-#!/usr/bin/env python
-# ---------------------------
-# Main script to run all data collectors and merge results
-# ---------------------------
-import os
+# Import all necessary functions and constants
+import argparse
 import importlib.util
-import pandas as pd
-import logging
-from datetime import datetime
 import sys
-from typing import Dict, Optional, Callable, Any, List, Union, TypeVar, Tuple, cast
-from types import ModuleType
+from pathlib import Path
 
-# Configure logging
-logging.basicConfig(
-    format='%(asctime)s %(levelname)-8s %(message)s',
-    level=logging.INFO,
-    datefmt='%Y-%m-%d %H:%M:%S',
-    force=True  # Force reconfiguration in case other modules configure logging
+from backtest.checks import (
+    backtest_dynamic_dca,
+    validate_strategy_comprehensive,
 )
-logger = logging.getLogger(__name__)
+from backtest.simulation import run_full_simulation
+from config import BACKTEST_END, BACKTEST_START
+from data.data_loader import load_data, validate_price_data
+from plot.plotting import (
+    plot_features,
+    plot_final_weights,
+    plot_spd_comparison,
+    plot_weight_sums_by_cycle,
+)
 
-# Type definitions
-ExtractFunc = Callable[[], Optional[pd.DataFrame]]
 
-def load_collector_module(file_path: str) -> Optional[ModuleType]:
+def load_strategy_from_file(strategy_path: str):
     """
-    Load a Python module from file path
-    
+    Dynamically load a strategy function from a Python file.
+
     Args:
-        file_path: Path to the Python file
-        
-    Returns:
-        Loaded module or None if loading failed
-    """
-    try:
-        module_name = os.path.basename(file_path).replace('.py', '')
-        spec = importlib.util.spec_from_file_location(module_name, file_path)
-        if spec is None or spec.loader is None:
-            logger.error(f"Could not create module spec for {file_path}")
-            return None
-            
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
-    except Exception as e:
-        logger.error(f"Error loading module {file_path}: {e}")
-        return None
+        strategy_path: Path to the Python file containing the strategy
 
-def find_data_extraction_function(module: ModuleType) -> Optional[ExtractFunc]:
-    """
-    Find the function that extracts data in a collector module
-    
-    Args:
-        module: The loaded Python module
-        
     Returns:
-        The function that returns a DataFrame or None if not found
+        The compute_weights function from the strategy file
     """
-    # Look for the standard extract_data function first
-    extract_func = getattr(module, 'extract_data', None)
-    
-    # For backward compatibility, check for alternative names
-    if extract_func is None:
-        for func_name in ['extract_btc_data', 'get_data', 'collect_data', 'fetch_data']:
-            extract_func = getattr(module, func_name, None)
-            if extract_func is not None:
-                break
-    
-    return cast(Optional[ExtractFunc], extract_func)
+    strategy_path = Path(strategy_path)
 
-def run_collectors(collectors_dir: str = 'collectors') -> Dict[str, pd.DataFrame]:
-    """
-    Run all collector scripts in the specified directory
-    
-    Args:
-        collectors_dir: Directory containing collector scripts
-        
-    Returns:
-        Dictionary mapping collector names to DataFrames
-    """
-    results: Dict[str, pd.DataFrame] = {}
-    
-    # Ensure the collectors directory exists
-    collectors_dir = os.path.abspath(collectors_dir)
-    if not os.path.exists(collectors_dir):
-        logger.error(f"Collectors directory '{collectors_dir}' not found")
-        return results
-    
-    # Find all Python files in the collectors directory
-    collector_files: List[str] = [
-        os.path.join(collectors_dir, f) for f in os.listdir(collectors_dir)
-        if f.endswith('.py') and not f.startswith('__')
-    ]
-    
-    logger.info(f"Found {len(collector_files)} collector scripts")
-    
-    # Run each collector
-    for file_path in collector_files:
-        collector_name = os.path.basename(file_path).replace('.py', '')
-        logger.info(f"Running collector: {collector_name}")
-        
-        # Load the module
-        module = load_collector_module(file_path)
-        if not module:
-            continue
-        
-        # Find the data extraction function
-        extract_func = find_data_extraction_function(module)
-        if not extract_func:
-            logger.warning(f"Could not find data extraction function in {collector_name}")
-            continue
-        
-        # Call the extraction function
-        try:
-            data = extract_func()
-            if isinstance(data, pd.DataFrame) and not data.empty:
-                logger.info(f"Successfully collected data from {collector_name}: {len(data)} rows")
-                results[collector_name] = data
-            else:
-                logger.warning(f"Collector {collector_name} did not return valid data")
-        except Exception as e:
-            logger.error(f"Error running collector {collector_name}: {e}")
-    
-    return results
+    if not strategy_path.exists():
+        raise FileNotFoundError(f"Strategy file not found: {strategy_path}")
 
-def merge_data(data_dict: Dict[str, pd.DataFrame], output_file: str = 'stacking_sats_data.parquet') -> bool:
-    """
-    Merge all collected data into a single parquet file
-    
-    Args:
-        data_dict: Dictionary mapping collector names to DataFrames
-        output_file: Path to save the merged data
-        
-    Returns:
-        True if successful, False otherwise
-    """
-    if not data_dict:
-        logger.error("No data to merge")
-        return False
-    
-    try:
-        # Create a directory for the merged data if it doesn't exist
-        output_dir = os.path.dirname(output_file)
-        if output_dir and not os.path.exists(output_dir):
-            os.makedirs(output_dir, exist_ok=True)
-        
-        # Add source column to each DataFrame
-        merged_dfs: List[pd.DataFrame] = []
-        for source, df in data_dict.items():
-            df_copy = df.copy()
-            if not df_copy.index.name:
-                df_copy.index.name = 'time'
-            df_copy = df_copy.reset_index()
-            df_copy['source'] = source
-            merged_dfs.append(df_copy)
-        
-        # Concatenate all DataFrames
-        merged_data = pd.concat(merged_dfs, axis=0, ignore_index=True)
-        
-        # Save to parquet
-        logger.info(f"Saving merged data to {output_file}")
-        merged_data.to_parquet(output_file)
-        
-        logger.info(f"Successfully saved merged data: {len(merged_data)} rows from {len(data_dict)} sources")
-        
-        # Print column information at the end
-        print("\nColumn information for merged data:")
-        print(f"Total columns: {len(merged_data.columns)}")
-        print(f"Columns: {list(merged_data.columns)}")
-        
-        return True
-    
-    except Exception as e:
-        logger.error(f"Error merging data: {e}")
-        import traceback
-        print(traceback.format_exc())
-        return False
+    if not strategy_path.suffix == ".py":
+        raise ValueError(f"Strategy file must be a Python file (.py): {strategy_path}")
 
-def main() -> int:
-    """Main function to run all collectors and merge data"""
-    # Ensure data directory exists
-    data_dir = os.path.abspath("data")
-    os.makedirs(data_dir, exist_ok=True)
-    
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    output_file = os.path.join(data_dir, f"merged_data_{timestamp}.parquet")
-    
-    logger.info("Starting data collection process")
-    logger.info(f"Data will be saved to: {output_file}")
-    
-    # Run all collectors
-    data_dict = run_collectors()
-    
-    if not data_dict:
-        logger.error("No data collected from any source")
-        return 1
-    
-    # Merge and save data
-    success = merge_data(data_dict, output_file)
-    
-    if success:
-        logger.info(f"Data collection completed successfully")
-        return 0
+    # Load the module dynamically
+    spec = importlib.util.spec_from_file_location("strategy_module", strategy_path)
+    strategy_module = importlib.util.module_from_spec(spec)
+
+    # Add current modules to the module's globals so it can import from them if needed
+    # strategy_module.__dict__["stacking_sats"] = sys.modules.get("stacking_sats")
+
+    # Import commonly needed modules into the strategy module's namespace
+    import numpy as np
+    import pandas as pd
+
+    strategy_module.__dict__["pd"] = pd
+    strategy_module.__dict__["np"] = np
+
+    spec.loader.exec_module(strategy_module)
+
+    # Check if compute_weights function exists
+    if not hasattr(strategy_module, "compute_weights"):
+        raise AttributeError(
+            f"Strategy file must contain a 'compute_weights' function: {strategy_path}"
+        )
+
+    return strategy_module.compute_weights
+
+
+def main():
+    """
+    Main function to run the Bitcoin DCA strategy backtesting and visualization.
+    """
+    parser = argparse.ArgumentParser(
+        description="Run Bitcoin DCA strategy backtesting and visualization"
+    )
+    parser.add_argument(
+        "--strategy",
+        "-s",
+        type=str,
+        default="strategy/strategy_template.py",
+        help="Path to the strategy Python file (default: strategy/strategy_template.py)",
+    )
+    parser.add_argument(
+        "--no-plot",
+        action="store_true",
+        help="Skip generating plots and only run backtesting",
+    )
+    parser.add_argument(
+        "--simulate",
+        action="store_true",
+        help="Run Bitcoin accumulation simulation with $10M annual budget",
+    )
+    parser.add_argument(
+        "--budget",
+        type=float,
+        default=10_000_000,
+        help="Annual budget for simulation in USD (default: 10,000,000)",
+    )
+
+    args = parser.parse_args()
+
+    # Derive strategy name from file path
+    strategy_path = Path(args.strategy)
+    if args.strategy == "strategy/strategy_template.py":
+        strategy_name = "200-Day MA Strategy"
     else:
-        logger.error("Data collection failed")
-        return 1
+        strategy_name = strategy_path.stem  # Gets filename without extension
+
+    # Load strategy function
+    try:
+        if args.strategy == "strategy/strategy_template.py":
+            # Default case - import from package
+            from strategy import strategy_template
+
+            compute_weights = strategy_template.compute_weights
+            print(f"Loaded strategy from package: {args.strategy}")
+        elif args.strategy.startswith("strategy/") and not Path(args.strategy).exists():
+            # Try importing from package if it's a relative path within the package
+            module_name = args.strategy.replace("strategy/", "").replace(".py", "")
+            try:
+                strategy_module = importlib.import_module(f"strategy.{module_name}")
+                compute_weights = strategy_module.compute_weights
+                print(f"Loaded strategy from package: {args.strategy}")
+            except ImportError:
+                raise FileNotFoundError(f"Strategy module not found: {module_name}")
+        else:
+            # Load from file path
+            compute_weights = load_strategy_from_file(args.strategy)
+            print(f"Loaded strategy from file: {args.strategy}")
+
+    except Exception as e:
+        print(f"Error loading strategy: {e}")
+        sys.exit(1)
+
+    # Load and validate data
+    btc_df = load_data()
+    validate_price_data(btc_df)
+    btc_df = btc_df.loc[BACKTEST_START:BACKTEST_END]
+
+    # Compute strategy weights
+    weights = compute_weights(btc_df)
+
+    # Run comprehensive validation checks from checks.py
+    print(f"\n{'=' * 60}")
+    print("COMPREHENSIVE STRATEGY VALIDATION")
+    print(f"{'=' * 60}")
+
+    validation_results = validate_strategy_comprehensive(
+        btc_df, compute_weights, return_details=True
+    )
+
+    # Print detailed validation results
+    if validation_results["validation_passed"]:
+        print("✅ ALL VALIDATION CHECKS PASSED")
+    else:
+        print("❌ VALIDATION ISSUES FOUND:")
+        if validation_results["has_negative_weights"]:
+            print("  • Strategy has negative or zero weights")
+        if validation_results["has_below_min_weights"]:
+            print("  • Strategy has weights below minimum threshold")
+        if validation_results["weights_not_sum_to_one"]:
+            print("  • Strategy weights don't sum to 1.0 per cycle")
+        if validation_results["underperforms_uniform"]:
+            print("  • Strategy underperforms uniform DCA")
+        if validation_results["is_forward_looking"]:
+            print("  • Strategy may be using forward-looking information")
+
+        # Show cycle-specific issues
+        if validation_results["cycle_issues"]:
+            print("\nCycle-specific issues:")
+            for cycle, issues in validation_results["cycle_issues"].items():
+                if issues:  # Only show cycles with issues
+                    issue_list = []
+                    if issues.get("has_negative_weights"):
+                        issue_list.append("negative weights")
+                    if issues.get("has_below_min_weights"):
+                        issue_list.append("below min weights")
+                    if issues.get("weights_not_sum_to_one"):
+                        issue_list.append(
+                            f"sum={issues.get('weight_sum', 'unknown'):.6f}"
+                        )
+                    if issues.get("underperforms_uniform"):
+                        issue_list.append(
+                            f"performance: {issues.get('dynamic_pct', 0):.2f}% < {issues.get('uniform_pct', 0):.2f}%"
+                        )
+
+                    if issue_list:
+                        print(f"  {cycle}: {', '.join(issue_list)}")
+
+    # Run simulation if requested
+    if args.simulate:
+        run_full_simulation(
+            btc_df,
+            compute_weights,
+            strategy_label=strategy_name,
+            annual_budget_usd=args.budget,
+        )
+
+    # Generate plots (only if not disabled)
+    if not args.no_plot:
+        plot_features(
+            btc_df, weights=weights, start_date=BACKTEST_START, end_date=BACKTEST_END
+        )
+        plot_final_weights(weights, start_date=BACKTEST_START)
+        plot_weight_sums_by_cycle(weights)
+
+    # Run backtesting
+    df_spd = backtest_dynamic_dca(
+        btc_df, strategy_fn=compute_weights, strategy_label=strategy_name
+    )
+    # check_strategy_submission_ready(btc_df, strategy_fn=compute_weights)
+
+    # Generate comparison plot (only if not disabled)
+    if not args.no_plot:
+        plot_spd_comparison(df_spd, strategy_name=strategy_name)
+
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    main()
