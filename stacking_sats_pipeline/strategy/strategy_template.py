@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 # Import configuration constants
-from config import BACKTEST_END, BACKTEST_START, CYCLE_YEARS, MIN_WEIGHT
+from ..config import BACKTEST_END, BACKTEST_START, CYCLE_YEARS, MIN_WEIGHT
 
 
 def construct_features(df: pd.DataFrame) -> pd.DataFrame:

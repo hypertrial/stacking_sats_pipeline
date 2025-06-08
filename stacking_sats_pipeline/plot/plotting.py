@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 
 # Import configuration constants and helper functions
-from config import BACKTEST_END, BACKTEST_START, CYCLE_YEARS, MIN_WEIGHT
-from strategy.strategy_template import construct_features
+from ..config import BACKTEST_END, BACKTEST_START, CYCLE_YEARS, MIN_WEIGHT
+from ..strategy.strategy_template import construct_features
 
 
 # ──────────────────────────────────────────────────────────────────────────────

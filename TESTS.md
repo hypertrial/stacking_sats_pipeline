@@ -1,0 +1,444 @@
+# Testing Documentation
+
+This document provides comprehensive information about the test suite for the Stacking Sats Pipeline project.
+
+## Overview
+
+The test suite is built using pytest and covers all major components of the pipeline:
+
+- **Backtesting functionality** (`test_backtest.py`)
+- **Data loading and validation** (`test_data.py`) 
+- **Command-line interface** (`test_cli.py`)
+- **Configuration and metadata** (`test_config.py`)
+- **Plotting and visualization** (`test_plot.py`)
+- **Strategy computation** (`test_strategy.py`)
+
+## Quick Start
+
+### Installation
+
+```bash
+# Install development dependencies
+pip install -e ".[dev]"
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run with verbose output
+pytest -v
+
+# Run specific test file
+pytest tests/test_backtest.py
+
+# Run specific test class
+pytest tests/test_backtest.py::TestBacktestingCore
+
+# Run specific test method
+pytest tests/test_backtest.py::TestBacktestingCore::test_quick_backtest_integration
+```
+
+### Test Categories
+
+Tests are organized into two main categories:
+
+#### Unit Tests (Default)
+Fast tests that don't require external dependencies or network access:
+```bash
+pytest -m "not integration"
+```
+
+#### Integration Tests
+Tests that may require network access or external data:
+```bash
+pytest -m integration
+```
+
+## Test Structure
+
+### Test Files Overview
+
+| File | Purpose | Key Features |
+|------|---------|--------------|
+| `test_backtest.py` | Backtesting functionality | Strategy validation, performance metrics, result analysis |
+| `test_data.py` | Data loading and validation | CoinMetrics integration, CSV handling, data validation |
+| `test_cli.py` | Command-line interface | Argument parsing, strategy loading, error handling |
+| `test_config.py` | Configuration and metadata | Package metadata, constants validation |
+| `test_plot.py` | Plotting and visualization | Chart generation, matplotlib integration |
+| `test_strategy.py` | Strategy computation | Weight calculation, feature construction |
+
+## Detailed Test Documentation
+
+### Backtesting Tests (`test_backtest.py`)
+
+#### TestBacktestingCore
+Tests core backtesting functionality including:
+
+- **Quick Backtesting**: `test_quick_backtest_integration()`
+  - Tests the `quick_backtest()` function with real data
+  - Validates performance metric calculation
+  - Marked as integration test due to data loading
+
+- **Strategy Decorator**: `test_strategy_decorator_basic()`
+  - Tests the `@strategy` decorator functionality
+  - Validates metadata attachment and function preservation
+  - Ensures decorated strategies work correctly
+
+- **Mocked Backtesting**: `test_backtest_mocked()`
+  - Tests `backtest()` function with mocked data
+  - Uses unittest.mock to avoid external dependencies
+  - Validates BacktestResults object creation
+
+#### TestBacktestResults
+Tests BacktestResults class functionality:
+
+- **Object Creation**: `test_backtest_results_creation()`
+- **Method Validation**: `test_backtest_results_methods()`
+
+#### TestStrategyValidation
+Tests strategy validation logic:
+
+- **Valid Strategy Validation**: `test_check_strategy_submission_ready_valid()`
+  - Tests strategies that should pass all validation checks
+  - Ensures proper weight normalization and constraints
+
+- **Invalid Strategy Detection**: `test_check_strategy_submission_ready_invalid()`
+  - Tests strategies with issues (negative weights, etc.)
+  - Validates error detection and reporting
+
+#### TestLegacyBacktesting
+Tests legacy backtesting functions:
+
+- **Cycle SPD Computation**: `test_compute_cycle_spd_basic()`
+- **Dynamic DCA Backtesting**: `test_backtest_dynamic_dca_basic()`
+
+#### TestStrategyPatterns
+Tests common strategy patterns:
+
+- **Constant Strategy**: `test_constant_strategy()`
+- **Varying Strategy**: `test_varying_strategy()`
+
+### Data Loading Tests (`test_data.py`)
+
+#### TestDataLoading
+Tests data loading functionality:
+
+- **Integration Data Loading**: `test_load_data_integration()`
+  - Tests `load_data()` with real CoinMetrics API
+  - Validates DataFrame structure and data quality
+  - Checks price data reasonableness
+
+- **Web Data Loading**: `test_load_btc_data_from_web_integration()`
+  - Tests direct web API calls
+  - Validates data format and structure
+
+- **Data Validation**: Multiple validation tests
+  - `test_validate_price_data_valid()`: Valid data handling
+  - `test_validate_price_data_missing_column()`: Missing column detection
+  - `test_validate_price_data_negative_prices()`: Price validation
+  - `test_validate_price_data_nan_values()`: NaN handling
+  - `test_validate_price_data_empty_dataframe()`: Empty data handling
+
+#### TestDataUtilities
+Tests utility functions:
+
+- **CSV Extraction**: `test_extract_btc_data_to_csv_integration()`
+
+#### TestDataMocking
+Tests with mocked network responses:
+
+- **Mocked Web Loading**: `test_load_btc_data_from_web_mocked()`
+  - Uses unittest.mock to simulate API responses
+  - Tests CSV parsing and data transformation
+
+### CLI Tests (`test_cli.py`)
+
+#### TestCLIBasic
+Tests basic CLI functionality:
+
+- **Help Command**: `test_cli_help()`
+  - Tests `--help` flag functionality
+  - Validates help text output
+
+- **Command Availability**: `test_stacking_sats_command()`
+  - Tests that `stacking-sats` command is properly installed
+  - Validates command registration
+
+#### TestCLIArguments
+Tests argument parsing:
+
+- **No-Plot Argument**: `test_no_plot_argument_parsing()`
+- **Strategy Argument**: `test_argument_parsing_strategy()`
+- Tests default values and custom argument handling
+
+#### TestCLIStrategyLoading
+Tests strategy file loading:
+
+- **Valid Strategy Loading**: `test_load_strategy_from_file_valid()`
+  - Creates temporary strategy files for testing
+  - Validates strategy function extraction
+  - Tests strategy execution
+
+- **Invalid Strategy Handling**: `test_load_strategy_from_file_invalid()`
+  - Tests error handling for malformed strategy files
+  - Validates proper error reporting
+
+- **Nonexistent File Handling**: `test_load_strategy_nonexistent_file()`
+
+#### TestCLIErrorHandling
+Tests error scenarios:
+
+- **Invalid Strategy Files**: `test_cli_with_invalid_strategy_file()`
+
+#### TestCLIFunctionality
+Tests CLI function signatures and availability:
+
+- **Main Function**: `test_main_function_exists()`
+- **Function Signatures**: `test_main_function_signature()`
+
+### Configuration Tests (`test_config.py`)
+
+#### TestPackageMetadata
+Tests package configuration:
+
+- **Version Information**: `test_version_exists()`
+  - Validates package version attribute
+  - Ensures version string format
+
+- **Import Validation**: `test_package_imports()`
+  - Tests that all exported functions are importable
+  - Validates public API availability
+
+#### TestConfigConstants
+Tests configuration constants:
+
+- **Constant Existence**: `test_config_constants_exist()`
+  - Validates all required constants are defined
+  - Checks data types and reasonable values
+
+- **Date Format Validation**: `test_date_format()`
+  - Tests date string parsing
+  - Validates date range consistency
+
+- **Purchase Frequency**: `test_purchase_freq_valid()`
+  - Validates frequency string format
+
+### Plotting Tests (`test_plot.py`)
+
+#### TestPlottingFunctions
+Tests plotting functionality with mocked matplotlib:
+
+- **Feature Plotting**: `test_plot_features_basic()`
+  - Tests `plot_features()` function
+  - Validates matplotlib integration
+  - Tests with and without weights
+
+- **Weight Plotting**: `test_plot_final_weights()`
+  - Tests weight distribution visualization
+  - Validates chart generation
+
+- **Cycle Analysis**: `test_plot_weight_sums_by_cycle()`
+  - Tests cycle-based weight analysis charts
+
+- **SPD Comparison**: `test_plot_spd_comparison()`
+  - Tests performance comparison charts
+  - Validates multi-strategy comparison
+
+#### TestPlottingInputValidation
+Tests plotting with various input scenarios:
+
+- **Minimal Data**: `test_plot_functions_with_minimal_data()`
+- **Edge Case Dates**: `test_plot_functions_with_edge_case_dates()`
+
+#### TestPlottingErrorHandling
+Tests error handling in plotting functions:
+
+- **Invalid Data**: `test_plot_features_invalid_data()`
+- **Invalid Weights**: `test_plot_final_weights_invalid_weights()`
+
+### Strategy Tests (`test_strategy.py`)
+
+#### TestStrategyFunctions
+Tests strategy computation functions:
+
+- **Feature Construction**: `test_construct_features_basic()`
+  - Tests `construct_features()` function
+  - Validates feature engineering pipeline
+  - Tests with various data lengths
+
+- **Weight Computation**: `test_compute_weights_basic()`
+  - Tests `compute_weights()` function
+  - Validates weight constraints and properties
+  - Tests mathematical properties
+
+- **Edge Cases**: Multiple edge case tests
+  - Short data handling
+  - Extreme values
+  - Missing data scenarios
+
+#### TestStrategyValidation
+Tests strategy validation logic:
+
+- **Function Signatures**: `test_strategy_function_signature()`
+- **Mathematical Properties**: `test_weights_mathematical_properties()`
+  - Non-negativity
+  - Finiteness
+  - Reasonable magnitude
+  - Variation checks
+
+#### TestCustomStrategy
+Tests custom strategy patterns:
+
+- **Uniform Strategy**: `test_uniform_strategy()`
+  - Tests equal-weight strategy implementation
+  - Validates weight normalization
+
+- **Momentum Strategy**: `test_momentum_strategy()`
+  - Tests trend-following strategy
+  - Validates price change calculations
+
+## Test Configuration
+
+### pytest Configuration (`pyproject.toml`)
+
+```toml
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "integration: marks tests as integration tests (may require network/data)",
+]
+```
+
+### Test Markers
+
+- `@pytest.mark.integration`: Tests requiring external resources
+- Tests without markers: Fast unit tests
+
+## Running Specific Test Categories
+
+### Unit Tests Only
+```bash
+pytest -m "not integration"
+```
+
+### Integration Tests Only
+```bash
+pytest -m integration
+```
+
+### Specific Components
+```bash
+# Backtest functionality
+pytest tests/test_backtest.py
+
+# Data loading
+pytest tests/test_data.py
+
+# CLI functionality  
+pytest tests/test_cli.py
+
+# Plotting (with mocked matplotlib)
+pytest tests/test_plot.py
+
+# Strategy computation
+pytest tests/test_strategy.py
+
+# Configuration
+pytest tests/test_config.py
+```
+
+### Test Output Options
+
+```bash
+# Verbose output
+pytest -v
+
+# Very verbose with print statements
+pytest -vv -s
+
+# Show test coverage
+pytest --cov=stacking_sats_pipeline
+
+# Generate HTML coverage report
+pytest --cov=stacking_sats_pipeline --cov-report=html
+```
+
+## Test Data and Mocking
+
+### Test Data Creation
+Most tests create synthetic Bitcoin price data:
+
+```python
+def create_test_data(self, num_days=100):
+    """Create test Bitcoin price data."""
+    dates = pd.date_range("2020-01-01", periods=num_days, freq="D")
+    np.random.seed(42)  # For reproducibility
+    prices = 30000 + np.cumsum(np.random.normal(0, 500, num_days))
+    prices = np.maximum(prices, 1000)  # Ensure positive prices
+    return pd.DataFrame({"PriceUSD": prices}, index=dates)
+```
+
+### Mocking Strategy
+Tests use `unittest.mock` to avoid external dependencies:
+
+- **Data Loading**: Mock CoinMetrics API responses
+- **Plotting**: Mock matplotlib to avoid GUI dependencies
+- **File Operations**: Mock file system interactions
+
+## Continuous Integration
+
+The test suite is designed to work in CI environments:
+
+- **No GUI Dependencies**: Plotting tests mock matplotlib
+- **Network Independence**: Unit tests don't require internet
+- **Integration Test Isolation**: Marked separately for optional execution
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Integration Test Failures**
+   - May indicate network connectivity issues
+   - CoinMetrics API availability
+   - Skip with: `pytest -m "not integration"`
+
+2. **Plotting Test Failures**
+   - Usually indicates matplotlib import issues
+   - Tests are mocked to avoid GUI requirements
+
+3. **Strategy Test Failures**
+   - Check that strategy functions return proper pandas Series
+   - Ensure weights sum to 1.0 and are non-negative
+
+### Test Development
+
+When adding new tests:
+
+1. **Follow Naming Convention**: `test_*.py` files, `Test*` classes, `test_*` methods
+2. **Use Appropriate Markers**: Mark integration tests with `@pytest.mark.integration`
+3. **Mock External Dependencies**: Use `unittest.mock` for external services
+4. **Create Synthetic Data**: Use reproducible random seeds
+5. **Test Edge Cases**: Include tests for boundary conditions and error scenarios
+
+## Test Coverage
+
+The test suite aims for comprehensive coverage of:
+
+- ✅ Core backtesting functionality
+- ✅ Data loading and validation
+- ✅ CLI argument parsing and execution
+- ✅ Strategy computation and validation
+- ✅ Plotting and visualization
+- ✅ Configuration and metadata
+- ✅ Error handling and edge cases
+
+Run coverage analysis:
+```bash
+pytest --cov=stacking_sats_pipeline --cov-report=term-missing
+``` 

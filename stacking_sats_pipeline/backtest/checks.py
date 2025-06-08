@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from config import BACKTEST_END, BACKTEST_START, CYCLE_YEARS, MIN_WEIGHT
+from ..config import BACKTEST_END, BACKTEST_START, CYCLE_YEARS, MIN_WEIGHT
 
 
 def _make_cycle_label(start, end, cycle_years):

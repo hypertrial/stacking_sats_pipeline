@@ -15,8 +15,9 @@ try:
 except ImportError:
     # Fall back to absolute imports (when run directly)
     from backtest.checks import backtest_dynamic_dca, validate_strategy_comprehensive
-    from config import BACKTEST_END, BACKTEST_START, CYCLE_YEARS
     from data.data_loader import load_data, validate_price_data
+
+    from ..config import BACKTEST_END, BACKTEST_START, CYCLE_YEARS
 
 
 class BacktestResults:

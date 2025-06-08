@@ -9,7 +9,7 @@ from typing import Callable
 
 import pandas as pd
 
-from config import BACKTEST_END, BACKTEST_START, CYCLE_YEARS
+from ..config import BACKTEST_END, BACKTEST_START, CYCLE_YEARS
 
 
 def simulate_bitcoin_accumulation(

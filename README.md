@@ -4,7 +4,7 @@ A Bitcoin DCA strategy backtesting framework for testing strategies against hist
 
 ## Quick Start
 
-### Library Interface (Recommended)
+### Library Interface
 
 ```python
 from stacking_sats_pipeline import backtest, strategy
@@ -24,6 +24,8 @@ results.plot()
 def my_strategy(df):
     return weights
 ```
+
+> **Note**: Data is now loaded directly into memory from CoinMetrics (no CSV files needed). For legacy file-based loading, use `load_data(use_memory=False)`.
 
 ### Interactive Tutorial
 
@@ -103,6 +105,31 @@ def your_strategy(df: pd.DataFrame) -> pd.Series:
 - No forward-looking data
 - Return pandas Series indexed by date
 
+## Testing
+
+The project includes a comprehensive test suite covering all major functionality:
+
+```bash
+# Install development dependencies
+pip install -e ".[dev]"
+
+# Run all tests
+pytest
+
+# Run specific test categories
+pytest -m "not integration"  # Skip integration tests
+pytest -m integration        # Run only integration tests
+
+# Run tests with coverage
+pytest --cov=stacking_sats_pipeline
+
+# Run specific test files
+pytest tests/test_backtest.py
+pytest tests/test_strategy.py
+```
+
+For detailed testing documentation, see [TESTS.md](TESTS.md).
+
 ## Command Line Options
 
 ```bash
@@ -115,8 +142,8 @@ python main.py --strategy your_strategy.py --no-plot
 # Run simulation
 python main.py --strategy your_strategy.py --simulate --budget 1000000
 
-# Weight calculator
-python -m weights.weight_calculator 1000 2024-01-01 2024-01-31 --save
+# Historical weight calculator (coinmetrics data only)
+python -m weights.weight_calculator 1000 2020-01-01 2023-12-31 --save
 ```
 
 ## Project Structure
@@ -125,10 +152,10 @@ python -m weights.weight_calculator 1000 2024-01-01 2024-01-31 --save
 ├── main.py              # Pipeline orchestrator
 ├── tutorials/examples.py # Interactive notebook
 ├── backtest/            # Validation & simulation
-├── data/                # Price data pipeline
+├── data/                # Price data pipeline (in-memory loading)
 ├── plot/                # Visualization
 ├── strategy/            # Strategy templates
-└── weights/             # Allocation calculator
+└── weights/             # Historical allocation calculator
 ```
 
 ## Output

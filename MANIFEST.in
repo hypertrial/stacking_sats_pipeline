@@ -1,0 +1,9 @@
+include README.md
+include LICENSE
+include requirements.txt
+include *.py
+recursive-include stacking_sats_pipeline *.py
+recursive-include tutorials *.py
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude * .DS_Store 

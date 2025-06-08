@@ -43,7 +43,12 @@ from .config import (
     MIN_WEIGHT,
     PURCHASE_FREQ,
 )
-from .data import extract_btc_data_to_csv, load_data, validate_price_data
+from .data import (
+    extract_btc_data_to_csv,
+    load_btc_data_from_web,
+    load_data,
+    validate_price_data,
+)
 from .plot import (
     plot_features,
     plot_final_weights,
@@ -52,7 +57,7 @@ from .plot import (
 )
 from .strategy import compute_weights, construct_features
 
-__version__ = "1.0.0"
+__version__ = "0.0.1"
 
 __all__ = [
     # New simplified interface (recommended)
@@ -69,6 +74,7 @@ __all__ = [
     # Data loading
     "extract_btc_data_to_csv",
     "load_data",
+    "load_btc_data_from_web",
     "validate_price_data",
     # Features
     "construct_features",

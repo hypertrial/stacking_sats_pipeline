@@ -4,14 +4,14 @@ import importlib.util
 import sys
 from pathlib import Path
 
-from backtest.checks import (
+from .backtest.checks import (
     backtest_dynamic_dca,
     validate_strategy_comprehensive,
 )
-from backtest.simulation import run_full_simulation
-from config import BACKTEST_END, BACKTEST_START
-from data.data_loader import load_data, validate_price_data
-from plot.plotting import (
+from .backtest.simulation import run_full_simulation
+from .config import BACKTEST_END, BACKTEST_START
+from .data.data_loader import load_data, validate_price_data
+from .plot.plotting import (
     plot_features,
     plot_final_weights,
     plot_spd_comparison,
@@ -106,7 +106,7 @@ def main():
     try:
         if args.strategy == "strategy/strategy_template.py":
             # Default case - import from package
-            from strategy import strategy_template
+            from .strategy import strategy_template
 
             compute_weights = strategy_template.compute_weights
             print(f"Loaded strategy from package: {args.strategy}")

@@ -1,0 +1,92 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stacking-sats-pipeline"
+version = "0.0.1"
+description = "Hypertrial's Stacking Sats Library - Optimized Bitcoin DCA"
+readme = "README.md"
+license = "MIT"
+authors = [
+    {name = "Matt Faltyn", email = "matt@trilemmacapital.com"}
+]
+maintainers = [
+    {name = "Matt Faltyn", email = "matt@trilemmacapital.com"}
+]
+keywords = ["bitcoin", "dca", "backtesting", "cryptocurrency", "trading", "strategy"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "pandas>=1.5.0",
+    "numpy>=1.21.0",
+    "requests>=2.28.0",
+    "matplotlib>=3.5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "ruff>=0.1.0",
+]
+tutorial = [
+    "marimo>=0.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/hypertrial/stacking_sats_pipeline"
+Repository = "https://github.com/hypertrial/stacking_sats_pipeline"
+Documentation = "https://github.com/hypertrial/stacking_sats_pipeline#readme"
+"Bug Tracker" = "https://github.com/hypertrial/stacking_sats_pipeline/issues"
+
+[project.scripts]
+stacking-sats = "stacking_sats_pipeline.main:main"
+
+[tool.setuptools]
+packages = ["stacking_sats_pipeline", "stacking_sats_pipeline.backtest", "stacking_sats_pipeline.data", "stacking_sats_pipeline.plot", "stacking_sats_pipeline.strategy", "stacking_sats_pipeline.weights"]
+
+[tool.setuptools.package-data]
+stacking_sats_pipeline = ["*.md", "*.txt"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "integration: marks tests as integration tests (may require network/data)",
+] 
