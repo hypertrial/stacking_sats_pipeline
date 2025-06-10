@@ -254,6 +254,45 @@ class BacktestResults:
 
         return df.set_index("date")
 
+    def _save_simplified_weights_csv(self, filename: str) -> str:
+        """
+        Save simplified weights CSV with date, model weight, weight %, and bitcoin price.
+
+        Args:
+            filename: Output filename
+
+        Returns:
+            Path to the saved CSV file
+        """
+        weights = self.backtest_weights
+
+        # Create simplified DataFrame
+        df_export = pd.DataFrame(
+            {
+                "date": weights.index.strftime("%Y-%m-%d"),
+                "model_weight": weights.values,
+                "weight_percent": (weights.values / weights.sum()) * 100,
+            }
+        )
+
+        # Add Bitcoin price if available
+        if "PriceUSD" in self.df.columns:
+            prices = []
+            for date in weights.index:
+                if date in self.df.index and pd.notna(self.df.loc[date, "PriceUSD"]):
+                    prices.append(self.df.loc[date, "PriceUSD"])
+                else:
+                    prices.append(None)
+            df_export["bitcoin_price"] = prices
+        else:
+            df_export["bitcoin_price"] = None
+
+        # Save to CSV
+        df_export.to_csv(filename, index=False)
+
+        print(f"Model weights saved to: {filename}")
+        return filename
+
     def plot(self, show: bool = True):
         """Generate plots for the backtest results."""
         try:
@@ -410,28 +449,12 @@ def backtest(
         if verbose:
             print(f"\n📊 Auto-exporting weights to {export_dir}/...")
 
-        # Export basic weights
-        basic_filename = (
-            f"{export_dir}/{strategy_name.lower().replace(' ', '_')}_weights.csv"
-        )
-        backtest_results.save_weights_to_csv(filename=basic_filename)
-
-        # Export weights with budget if provided
-        if export_budget is not None:
-            budget_filename = f"{export_dir}/{strategy_name.lower().replace(' ', '_')}_weights_budget.csv"
-            backtest_results.save_weights_to_csv(
-                filename=budget_filename, budget=export_budget
-            )
-
-            if verbose:
-                print(f"💰 Exported weights with ${export_budget:,.0f} budget")
-
-        # Export cycle summary
-        summary_filename = f"{export_dir}/{strategy_name.lower().replace(' ', '_')}_weights_summary.csv"
-        backtest_results.export_weights_summary(filename=summary_filename)
+        # Export simplified weights CSV
+        filename = f"{export_dir}/{strategy_name.lower().replace(' ', '_')}_weights.csv"
+        backtest_results._save_simplified_weights_csv(filename)
 
         if verbose:
-            print("✅ Weight export complete!")
+            print(f"✅ Weight export complete! Saved to {filename}")
 
     return backtest_results
 
