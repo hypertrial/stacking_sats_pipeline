@@ -125,21 +125,24 @@ Tests common strategy patterns:
 
 ### Data Loading Tests (`test_data.py`)
 
+The data loading system has been refactored into a modular architecture with separate loaders for different data sources. See `stacking_sats_pipeline/data/CONTRIBUTE.md` for information on adding new data sources.
+
 #### TestDataLoading
-Tests data loading functionality:
+Tests data loading functionality with the new modular data loading system:
 
 - **Integration Data Loading**: `test_load_data_integration()`
-  - Tests `load_data()` with real CoinMetrics API
+  - Tests `load_data()` with real CoinMetrics API via the new modular system
   - Validates DataFrame structure and data quality
   - Checks price data reasonableness
 
 - **Web Data Loading**: `test_load_btc_data_from_web_integration()`
-  - Tests direct web API calls
+  - Tests direct web API calls through backward compatibility functions
   - Validates data format and structure
 
-- **Data Validation**: Multiple validation tests
+- **Data Validation**: Multiple validation tests with flexible validation system
   - `test_validate_price_data_valid()`: Valid data handling
-  - `test_validate_price_data_missing_column()`: Missing column detection
+  - `test_validate_price_data_missing_column()`: Missing price column detection (flexible - looks for any "Price" columns)
+  - `test_validate_price_data_specific_columns()`: Tests specific price column validation with custom requirements
   - `test_validate_price_data_negative_prices()`: Price validation
   - `test_validate_price_data_nan_values()`: NaN handling
   - `test_validate_price_data_empty_dataframe()`: Empty data handling
@@ -153,8 +156,9 @@ Tests utility functions:
 Tests with mocked network responses:
 
 - **Mocked Web Loading**: `test_load_btc_data_from_web_mocked()`
-  - Uses unittest.mock to simulate API responses
-  - Tests CSV parsing and data transformation
+  - Uses unittest.mock to simulate API responses via the CoinMetrics loader
+  - Tests CSV parsing and data transformation through the new modular system
+  - Mocks `stacking_sats_pipeline.data.coinmetrics_loader.requests.get` for proper isolation
 
 ### CLI Tests (`test_cli.py`)
 

@@ -66,12 +66,25 @@ class TestDataLoading:
         validate_price_data(df)
 
     def test_validate_price_data_missing_column(self):
-        """Test validate_price_data with missing PriceUSD column."""
+        """Test validate_price_data with missing Price columns."""
         dates = pd.date_range("2020-01-01", periods=10, freq="D")
-        df = pd.DataFrame({"Price": [100] * 10}, index=dates)
+        # Create DataFrame with no Price columns
+        df = pd.DataFrame({"Volume": [100] * 10}, index=dates)
 
         with pytest.raises((KeyError, ValueError)):
             validate_price_data(df)
+
+    def test_validate_price_data_specific_columns(self):
+        """Test validate_price_data with specific price columns."""
+        dates = pd.date_range("2020-01-01", periods=10, freq="D")
+        df = pd.DataFrame({"Price": [100] * 10}, index=dates)
+
+        # Should not raise when Price column exists (flexible validation)
+        validate_price_data(df)
+
+        # Should raise when specific column is required but missing
+        with pytest.raises(ValueError):
+            validate_price_data(df, price_columns=["PriceUSD"])
 
     def test_validate_price_data_negative_prices(self):
         """Test validate_price_data with negative prices."""
@@ -130,7 +143,7 @@ class TestDataUtilities:
 class TestDataMocking:
     """Test data functions with mocked responses."""
 
-    @patch("stacking_sats_pipeline.data.data_loader.requests.get")
+    @patch("stacking_sats_pipeline.data.coinmetrics_loader.requests.get")
     def test_load_btc_data_from_web_mocked(self, mock_get):
         """Test load_btc_data_from_web with mocked response."""
         # Create mock CSV data

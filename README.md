@@ -130,7 +130,11 @@ pytest -m "not integration"  # Skip integration tests
 pytest -m integration        # Run only integration tests
 ```
 
-For detailed testing documentation, see [TESTS.md](TESTS.md).
+For detailed testing documentation, see [TESTS.md](tests/TESTS.md).
+
+### Contributing Data Sources
+
+The data loading system is designed to be modular and extensible. To add new data sources (exchanges, APIs, etc.), see the [Data Loader Contribution Guide](stacking_sats_pipeline/data/CONTRIBUTE.md) which provides step-by-step instructions for implementing new data loaders.
 
 ## Command Line Options
 
@@ -154,7 +158,10 @@ stacking-sats --help
 ├── stacking_sats_pipeline/
 │   ├── main.py          # Pipeline orchestrator
 │   ├── backtest/        # Validation & simulation
-│   ├── data/            # Price data pipeline (in-memory loading)
+│   ├── data/            # Modular data loading system
+│   │   ├── coinmetrics_loader.py  # CoinMetrics data source
+│   │   ├── data_loader.py         # Multi-source data loader
+│   │   └── CONTRIBUTE.md          # Guide for adding data sources
 │   ├── plot/            # Visualization
 │   ├── strategy/        # Strategy templates
 │   └── weights/         # Historical allocation calculator
