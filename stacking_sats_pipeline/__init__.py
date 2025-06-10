@@ -57,7 +57,7 @@ from .plot import (
 )
 from .strategy import compute_weights, construct_features
 
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 
 __all__ = [
     # New simplified interface (recommended)

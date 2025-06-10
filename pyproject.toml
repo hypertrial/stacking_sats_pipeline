@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "stacking-sats-pipeline"
-version = "0.0.1"
+version = "0.1.0"
 description = "Hypertrial's Stacking Sats Library - Optimized Bitcoin DCA"
 readme = "README.md"
 license = "MIT"
