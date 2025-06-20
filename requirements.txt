@@ -8,6 +8,12 @@ numpy>=1.21.0
 # HTTP requests for data downloading
 requests>=2.28.0
 
+# Parquet file support
+pyarrow>=10.0.0
+
+# Environment variable management
+python-dotenv>=0.19.0
+
 # Optional plotting dependencies (lazy loaded)
 matplotlib>=3.5.0
 

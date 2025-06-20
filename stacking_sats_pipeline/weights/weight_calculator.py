@@ -206,6 +206,43 @@ def save_weights_to_csv(
     if filename is None:
         filename = f"weights_{start_date}_to_{end_date}.csv"
 
+    df = _create_weights_dataframe(budget, start_date, end_date)
+    df.to_csv(filename)
+    logger.info(f"Saved weights and allocations to {filename}")
+    return filename
+
+
+def save_weights_to_parquet(
+    budget: float, start_date: str, end_date: str, filename: Optional[str] = None
+) -> str:
+    """Save weights and allocations to Parquet file."""
+    if filename is None:
+        filename = f"weights_{start_date}_to_{end_date}.parquet"
+
+    df = _create_weights_dataframe(budget, start_date, end_date)
+    df.to_parquet(filename)
+    logger.info(f"Saved weights and allocations to {filename}")
+    return filename
+
+
+def save_weights(
+    budget: float,
+    start_date: str,
+    end_date: str,
+    filename: Optional[str] = None,
+    file_format: str = "csv",
+) -> str:
+    """Save weights and allocations to file in specified format."""
+    if file_format.lower() == "parquet":
+        return save_weights_to_parquet(budget, start_date, end_date, filename)
+    else:
+        return save_weights_to_csv(budget, start_date, end_date, filename)
+
+
+def _create_weights_dataframe(
+    budget: float, start_date: str, end_date: str
+) -> pd.DataFrame:
+    """Create a DataFrame with weights, allocations, and prices for export."""
     weights = get_weights_for_period(start_date, end_date)
     btc_df = get_historical_data_for_period(start_date, end_date)
 
@@ -239,9 +276,7 @@ def save_weights_to_csv(
     df["btc_amount"] = btc_amounts
     df.set_index("date", inplace=True)
 
-    df.to_csv(filename)
-    logger.info(f"Saved weights and allocations to {filename}")
-    return filename
+    return df
 
 
 # =============================================================================

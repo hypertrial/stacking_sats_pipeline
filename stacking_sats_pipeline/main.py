@@ -130,8 +130,9 @@ def main():
 
     # Load and validate data
     btc_df = load_data()
-    validate_price_data(btc_df)
+    # Filter to backtest period first, then validate
     btc_df = btc_df.loc[BACKTEST_START:BACKTEST_END]
+    validate_price_data(btc_df)
 
     # Compute strategy weights
     weights = compute_weights(btc_df)

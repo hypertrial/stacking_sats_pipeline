@@ -45,6 +45,7 @@ from .config import (
 )
 from .data import (
     extract_btc_data_to_csv,
+    extract_btc_data_to_parquet,
     load_btc_data_from_web,
     load_data,
     validate_price_data,
@@ -73,6 +74,7 @@ __all__ = [
     "MIN_WEIGHT",
     # Data loading
     "extract_btc_data_to_csv",
+    "extract_btc_data_to_parquet",
     "load_data",
     "load_btc_data_from_web",
     "validate_price_data",

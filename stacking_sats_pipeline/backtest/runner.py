@@ -76,6 +76,49 @@ class BacktestResults:
             end_date = self.df.index.max().strftime("%Y-%m-%d")
             filename = f"{strategy_name}_weights_{start_date}_to_{end_date}.csv"
 
+        df_export = self._create_weights_dataframe(budget)
+        df_export.to_csv(filename)
+
+        print(f"Model weights saved to: {filename}")
+        return filename
+
+    def save_weights_to_parquet(
+        self, filename: Optional[str] = None, budget: Optional[float] = None
+    ) -> str:
+        """
+        Save backtest period weights to Parquet file.
+
+        Args:
+            filename: Output filename. If None, auto-generates based on strategy name and dates
+            budget: Optional budget to calculate USD allocations. If None, uses normalized weights
+
+        Returns:
+            Path to the saved Parquet file
+        """
+
+        # Auto-generate filename if not provided
+        if filename is None:
+            strategy_name = getattr(self.strategy_fn, "__name__", "strategy")
+            start_date = self.df.index.min().strftime("%Y-%m-%d")
+            end_date = self.df.index.max().strftime("%Y-%m-%d")
+            filename = f"{strategy_name}_weights_{start_date}_to_{end_date}.parquet"
+
+        df_export = self._create_weights_dataframe(budget)
+        df_export.to_parquet(filename)
+
+        print(f"Model weights saved to: {filename}")
+        return filename
+
+    def _create_weights_dataframe(self, budget: Optional[float] = None) -> pd.DataFrame:
+        """
+        Create a DataFrame with weights and metadata for export.
+
+        Args:
+            budget: Optional budget to calculate USD allocations
+
+        Returns:
+            DataFrame ready for export
+        """
         weights = self.backtest_weights
 
         # Create DataFrame with weights and metadata
@@ -113,10 +156,29 @@ class BacktestResults:
                 df_export["btc_amount"] = btc_amounts
 
         df_export.set_index("date", inplace=True)
-        df_export.to_csv(filename)
+        return df_export
 
-        print(f"Model weights saved to: {filename}")
-        return filename
+    def save_weights(
+        self,
+        filename: Optional[str] = None,
+        budget: Optional[float] = None,
+        file_format: str = "csv",
+    ) -> str:
+        """
+        Save backtest period weights to file in specified format.
+
+        Args:
+            filename: Output filename. If None, auto-generates based on strategy name and dates
+            budget: Optional budget to calculate USD allocations. If None, uses normalized weights
+            file_format: Output format ("csv" or "parquet")
+
+        Returns:
+            Path to the saved file
+        """
+        if file_format.lower() == "parquet":
+            return self.save_weights_to_parquet(filename, budget)
+        else:
+            return self.save_weights_to_csv(filename, budget)
 
     def display_weight_statistics(self, budget: Optional[float] = None):
         """

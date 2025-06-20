@@ -117,9 +117,22 @@ class TestPlottingFunctions:
     @patch("matplotlib.pyplot.figure")
     def test_plot_spd_comparison(self, mock_figure, mock_show):
         """Test plot_spd_comparison function."""
-        spd_data = self.create_test_spd_data()
-
+        # Create proper SPD test data with required columns
         try:
+            spd_data = pd.DataFrame(
+                {
+                    "max_spd": [1.8, 2.0, 1.6],
+                    "dynamic_spd": [1.2, 1.5, 1.1],
+                    "static_dca_spd": [1.1, 1.3, 1.0],
+                    "uniform_spd": [1.0, 1.0, 1.0],
+                    "min_spd": [0.8, 0.9, 0.7],
+                    "uniform_pct": [25.0, 20.0, 30.0],
+                    "static_dca_pct": [30.0, 40.0, 35.0],
+                    "dynamic_pct": [40.0, 60.0, 45.0],
+                },
+                index=pd.date_range("2020-01-01", periods=3, freq="D"),
+            )
+
             plot_spd_comparison(spd_data, strategy_name="Test Strategy")
             mock_figure.assert_called()
 

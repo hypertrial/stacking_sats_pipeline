@@ -8,9 +8,11 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Protocol
 
+import numpy as np
 import pandas as pd
 
 from .coinmetrics_loader import CoinMetricsLoader
+from .fred_loader import FREDLoader
 
 # Logging configuration
 # ---------------------------
@@ -55,6 +57,19 @@ class MultiSourceDataLoader:
             "coinmetrics": CoinMetricsLoader(self.data_dir)
         }
 
+        # Add FRED loader only if API key is available
+        try:
+            fred_loader = FREDLoader(self.data_dir)
+            self.loaders["fred"] = fred_loader
+            logging.info("FRED loader registered successfully")
+        except ValueError as e:
+            if "FRED API key is required" in str(e):
+                logging.warning(
+                    "FRED loader not available: No API key found. Set FRED_API_KEY environment variable to enable FRED data."
+                )
+            else:
+                logging.warning("FRED loader initialization failed: %s", e)
+
     def add_loader(self, name: str, loader: DataLoader) -> None:
         """
         Add a new data loader.
@@ -70,7 +85,11 @@ class MultiSourceDataLoader:
         logging.info("Added data loader: %s", name)
 
     def load_from_source(
-        self, source: str, use_memory: bool = True, path: str | Path | None = None
+        self,
+        source: str,
+        use_memory: bool = True,
+        path: str | Path | None = None,
+        file_format: str = "csv",
     ) -> pd.DataFrame:
         """
         Load data from a specific source.
@@ -81,9 +100,11 @@ class MultiSourceDataLoader:
             Name of the data source loader to use.
         use_memory : bool, default True
             If True, loads data directly from web into memory.
-            If False, loads from local CSV file.
+            If False, loads from local file.
         path : str or Path, optional
-            Path to the CSV file. Only used if use_memory=False.
+            Path to the file. Only used if use_memory=False.
+        file_format : str, default "csv"
+            File format to use when use_memory=False. Options: "csv", "parquet".
 
         Returns
         -------
@@ -96,7 +117,7 @@ class MultiSourceDataLoader:
             )
 
         loader = self.loaders[source]
-        return loader.load(use_memory=use_memory, path=path)
+        return loader.load(use_memory=use_memory, path=path, file_format=file_format)
 
     def load_and_merge(
         self,
@@ -167,7 +188,10 @@ class MultiSourceDataLoader:
 
 # Main convenience functions
 def load_data(
-    source: str = "coinmetrics", use_memory: bool = True, path: str | Path | None = None
+    source: str = "coinmetrics",
+    use_memory: bool = True,
+    path: str | Path | None = None,
+    file_format: str = "csv",
 ) -> pd.DataFrame:
     """
     Load BTC price data from a specific source.
@@ -178,9 +202,11 @@ def load_data(
         Name of the data source to use.
     use_memory : bool, default True
         If True, loads data directly from web into memory.
-        If False, loads from local CSV file.
+        If False, loads from local file.
     path : str or Path, optional
-        Path to the CSV file. Only used if use_memory=False.
+        Path to the file. Only used if use_memory=False.
+    file_format : str, default "csv"
+        File format to use when use_memory=False. Options: "csv", "parquet".
 
     Returns
     -------
@@ -188,7 +214,9 @@ def load_data(
         DataFrame with BTC data, indexed by datetime.
     """
     loader = MultiSourceDataLoader()
-    return loader.load_from_source(source, use_memory=use_memory, path=path)
+    return loader.load_from_source(
+        source, use_memory=use_memory, path=path, file_format=file_format
+    )
 
 
 def load_and_merge_data(
@@ -227,14 +255,19 @@ def validate_price_data(
     df: pd.DataFrame, price_columns: Optional[List[str]] = None
 ) -> None:
     """
-    Basic sanity‑check on the input dataframe.
+    Comprehensive validation of price data DataFrame.
 
     Parameters
     ----------
     df : pd.DataFrame
         DataFrame to validate.
     price_columns : List[str], optional
-        List of expected price columns. If None, looks for any column containing 'Price'.
+        List of expected price columns. If None, defaults to ['PriceUSD'] only.
+
+    Raises
+    ------
+    ValueError
+        If the DataFrame fails any validation checks.
     """
     if df.empty:
         raise ValueError("DataFrame is empty.")
@@ -243,8 +276,11 @@ def validate_price_data(
         raise ValueError("Index must be DatetimeIndex.")
 
     if price_columns is None:
-        # Look for any column containing 'Price'
+        # Look for any column containing 'Price' for flexibility
         price_columns = [col for col in df.columns if "Price" in col]
+        # If no Price columns found, default to PriceUSD for error message
+        if not price_columns:
+            price_columns = ["PriceUSD"]
 
     if not price_columns:
         raise ValueError("No price columns found in the data.")
@@ -253,6 +289,27 @@ def validate_price_data(
     missing_cols = [col for col in price_columns if col not in df.columns]
     if missing_cols:
         raise ValueError(f"Missing price columns: {missing_cols}")
+
+    # Validate price data quality
+    for col in price_columns:
+        if col in df.columns:
+            price_series = df[col]
+
+            # Check for missing values
+            if price_series.isna().any():
+                raise ValueError(f"Price column '{col}' contains missing values (NaN)")
+
+            # Check for negative prices
+            if (price_series < 0).any():
+                raise ValueError(f"Price column '{col}' contains negative values")
+
+            # Check for zero prices (usually invalid)
+            if (price_series == 0).any():
+                raise ValueError(f"Price column '{col}' contains zero values")
+
+            # Check for infinite values
+            if not price_series.apply(lambda x: np.isfinite(x)).all():
+                raise ValueError(f"Price column '{col}' contains infinite values")
 
 
 # Backward compatibility functions
@@ -265,3 +322,9 @@ def extract_btc_data_to_csv(local_path: str | Path | None = None) -> None:
     """Extract CoinMetrics BTC data to CSV (backward compatibility)."""
     loader = CoinMetricsLoader()
     loader.extract_to_csv(local_path)
+
+
+def extract_btc_data_to_parquet(local_path: str | Path | None = None) -> None:
+    """Extract CoinMetrics BTC data to Parquet."""
+    loader = CoinMetricsLoader()
+    loader.extract_to_parquet(local_path)

@@ -8,6 +8,7 @@ The test suite is built using pytest and covers all major components of the pipe
 
 - **Backtesting functionality** (`test_backtest.py`)
 - **Data loading and validation** (`test_data.py`) 
+- **End-to-end data pipeline including Parquet support** (`test_data_pipeline_e2e.py`)
 - **Command-line interface** (`test_cli.py`)
 - **Configuration and metadata** (`test_config.py`)
 - **Plotting and visualization** (`test_plot.py`)
@@ -66,6 +67,7 @@ pytest -m integration
 |------|---------|--------------|
 | `test_backtest.py` | Backtesting functionality | Strategy validation, performance metrics, result analysis |
 | `test_data.py` | Data loading and validation | CoinMetrics integration, CSV handling, data validation |
+| `test_data_pipeline_e2e.py` | End-to-end data pipeline | Real API testing, Parquet support, file format conversion, data quality validation |
 | `test_cli.py` | Command-line interface | Argument parsing, strategy loading, error handling |
 | `test_config.py` | Configuration and metadata | Package metadata, constants validation |
 | `test_plot.py` | Plotting and visualization | Chart generation, matplotlib integration |
@@ -398,6 +400,143 @@ Integration tests with actual data constraints:
   - Tests that current/future dates are properly handled
   - Validates real-time constraint enforcement
 
+### End-to-End Data Pipeline Tests (`test_data_pipeline_e2e.py`)
+
+The end-to-end test suite provides comprehensive testing of the entire data pipeline using real API calls and covers the complete data lifecycle including the new Parquet support.
+
+#### TestDataPipelineEndToEnd
+Tests the complete data pipeline with real API endpoints:
+
+- **Single Source Extraction**: `test_single_source_data_extraction_coinmetrics()`, `test_single_source_data_extraction_fred()`
+  - Tests data extraction from CoinMetrics and FRED APIs with real data
+  - Validates data structure, quality, and consistency
+  - Handles real-world data quality issues (missing values, etc.)
+
+- **Multi-Source Data Merging**: `test_multi_source_data_merging_and_cleaning()`
+  - Tests merging data from multiple sources (CoinMetrics + FRED)
+  - Validates proper column suffixes and data alignment
+  - Tests overlapping date ranges and data consistency
+
+- **Data Cleaning Pipeline**: `test_data_cleaning_and_validation_pipeline()`
+  - Tests comprehensive data cleaning with real data samples
+  - Validates handling of missing values, negative prices, and infinite values
+  - Tests validation functions with problematic data
+
+- **File Caching**: `test_data_pipeline_with_file_caching()`
+  - Tests file-based caching functionality
+  - Validates that cached data matches fresh API data
+  - Tests cache creation and reuse
+
+- **Performance Characteristics**: `test_data_pipeline_performance_characteristics()`
+  - Tests loading time and memory usage constraints
+  - Validates performance expectations for production use
+
+- **Date Range Filtering**: `test_data_pipeline_date_range_filtering()`
+  - Tests filtering data to specific date ranges
+  - Validates boundary conditions and data availability
+
+- **API Key Handling**: `test_data_pipeline_with_missing_api_keys()`
+  - Tests graceful handling when API keys are missing
+  - Validates source availability based on authentication
+
+- **Integration Testing**: `test_real_data_pipeline_integration()`
+  - Complete integration test with all available data sources
+  - Tests full pipeline from raw API data to clean, merged DataFrames
+
+#### TestDataQualityValidation
+Tests comprehensive data quality validation with real data:
+
+- **Comprehensive Validation**: `test_price_data_validation_comprehensive()`
+  - Tests validation pipeline with real data samples
+  - Validates error detection for various data quality issues
+  - Tests edge cases with empty DataFrames and invalid structures
+
+- **Data Consistency**: `test_data_consistency_validation()`
+  - Tests consistency validation across multiple data sources
+  - Validates date alignment and data range checks
+  - Tests cross-source data quality metrics
+
+#### TestDataPipelineMemoryManagement
+Tests memory efficiency and resource management:
+
+- **Memory Efficient Loading**: `test_memory_efficient_data_loading()`
+  - Tests memory usage during data loading operations
+  - Validates memory per record stays within reasonable bounds
+  - Tests memory cleanup and garbage collection
+
+#### TestParquetDataPipeline
+Tests comprehensive Parquet file support throughout the data pipeline:
+
+- **CoinMetrics Parquet Operations**: `test_coinmetrics_parquet_extraction_and_loading()`
+  - Tests extraction to Parquet format
+  - Validates Parquet file creation and loading
+  - Compares Parquet data with original web data for accuracy
+
+- **FRED Parquet Operations**: `test_fred_parquet_extraction_and_loading()`
+  - Tests FRED data extraction and loading in Parquet format
+  - Validates data integrity between web and Parquet sources
+  - Tests with real FRED API data (requires API key)
+
+- **Multi-Source Parquet Support**: `test_data_loader_parquet_support()`
+  - Tests main data loader with Parquet format parameter
+  - Validates file format selection functionality
+  - Tests Parquet file creation in temporary directories
+
+- **Main Function Parquet Support**: `test_load_data_function_parquet_support()`
+  - Tests `load_data()` function with `file_format="parquet"` parameter
+  - Validates round-trip consistency (web → parquet → load)
+  - Tests file path handling and format selection
+
+- **File Size Efficiency**: `test_parquet_file_size_efficiency()`
+  - Compares file sizes between CSV and Parquet formats
+  - Validates compression efficiency (Parquet typically 40-60% of CSV size)
+  - Tests storage optimization benefits
+
+- **Data Type Preservation**: `test_parquet_data_types_preservation()`
+  - Tests that Parquet preserves DatetimeIndex and numeric types
+  - Validates schema preservation across save/load cycles
+  - Tests data type consistency compared to original data
+
+#### TestBacktestParquetExport
+Tests Parquet export functionality in backtest results and weight calculation:
+
+- **Backtest Results Parquet Export**: `test_backtest_results_parquet_export()`
+  - Tests `save_weights_to_parquet()` method in BacktestResults
+  - Validates Parquet file structure and content
+  - Compares CSV vs Parquet export consistency
+  - Tests generic `save_weights()` method with format selection
+
+- **Weight Calculator Parquet Export**: `test_weight_calculator_parquet_export()`
+  - Tests Parquet export functionality in weight calculator module
+  - Validates `save_weights_to_parquet()` and `save_weights()` functions
+  - Tests file creation and data integrity
+
+### Key Features of End-to-End Tests
+
+#### Real API Integration
+- Uses actual CoinMetrics and FRED APIs (not mocked)
+- Tests with real-world data quality issues
+- Validates API authentication and error handling
+- Tests network resilience and timeout handling
+
+#### Comprehensive Parquet Support
+- Tests all data loaders with Parquet format
+- Validates file format conversion accuracy
+- Tests performance and storage efficiency
+- Validates data type preservation and schema consistency
+
+#### Data Quality Validation
+- Tests with real data that may have missing values
+- Validates handling of edge cases in historical data
+- Tests data cleaning and validation pipelines
+- Handles real-world Bitcoin price data quirks
+
+#### Performance and Resource Testing
+- Tests memory usage during data operations
+- Validates loading time constraints
+- Tests file size efficiency
+- Validates resource cleanup and management
+
 ## Test Configuration
 
 ### pytest Configuration (`pyproject.toml`)
@@ -437,6 +576,9 @@ pytest tests/test_backtest.py
 
 # Data loading
 pytest tests/test_data.py
+
+# End-to-end data pipeline (includes Parquet tests)
+pytest tests/test_data_pipeline_e2e.py
 
 # CLI functionality  
 pytest tests/test_cli.py
@@ -533,12 +675,16 @@ The test suite aims for comprehensive coverage of:
 
 - ✅ Core backtesting functionality
 - ✅ Data loading and validation
+- ✅ End-to-end data pipeline with real API integration
+- ✅ Parquet file format support throughout the pipeline
 - ✅ CLI argument parsing and execution
 - ✅ Strategy computation and validation
 - ✅ Weight calculator and historical data constraints
 - ✅ Plotting and visualization
 - ✅ Configuration and metadata
 - ✅ Error handling and edge cases
+- ✅ File format conversion and efficiency
+- ✅ Data type preservation and schema validation
 
 Run coverage analysis:
 ```bash
