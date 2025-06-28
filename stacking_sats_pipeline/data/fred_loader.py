@@ -11,6 +11,7 @@ from typing import Optional
 
 import pandas as pd
 import requests
+import pytz
 
 # Load environment variables if available
 try:
@@ -106,8 +107,14 @@ class FREDLoader:
 
                 # Skip missing values (marked as '.' in FRED)
                 if value != ".":
+                    # Parse date as CDT (FRED's timezone) and convert to UTC
+                    cdt_tz = pytz.timezone('America/Chicago')
+                    naive_dt = pd.to_datetime(date)
+                    cdt_dt = cdt_tz.localize(naive_dt)
+                    utc_dt = cdt_dt.astimezone(pytz.UTC)
+                    
                     df_data.append(
-                        {"date": pd.to_datetime(date), "DXY_Value": float(value)}
+                        {"date": utc_dt, "DXY_Value": float(value)}
                     )
 
             if not df_data:
@@ -294,6 +301,10 @@ class FREDLoader:
             )
         if not isinstance(df.index, pd.DatetimeIndex):
             raise ValueError("Index must be DatetimeIndex.")
+        if df.index.tz is None:
+            raise ValueError("DatetimeIndex must be timezone-aware.")
+        if df.index.tz != pytz.UTC:
+            raise ValueError("DatetimeIndex must be in UTC timezone.")
 
 
 # Convenience functions for backward compatibility
