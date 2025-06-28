@@ -7,7 +7,7 @@ name = "stacking-sats-pipeline"
 version = "0.1.0"
 description = "Hypertrial's Stacking Sats Library - Optimized Bitcoin DCA"
 readme = "README.md"
-license = "MIT"
+license = {file = "LICENSE"}
 authors = [
     {name = "Matt Faltyn", email = "matt@trilemmacapital.com"}
 ]
