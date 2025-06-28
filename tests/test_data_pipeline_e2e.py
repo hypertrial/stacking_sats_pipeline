@@ -539,7 +539,10 @@ class TestDataPipelineMemoryManagement:
         """Test that data loading is memory efficient."""
         import os
 
-        import psutil
+        try:
+            import psutil
+        except ImportError:
+            pytest.skip("psutil not available - skipping memory test")
 
         try:
             process = psutil.Process(os.getpid())
