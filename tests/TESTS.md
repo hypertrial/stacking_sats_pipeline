@@ -2,6 +2,11 @@
 
 This document provides comprehensive information about the test suite for the Stacking Sats Pipeline project.
 
+## Requirements
+
+- Python 3.11 or 3.12
+- pytest and development dependencies
+
 ## Overview
 
 The test suite is built using pytest and covers all major components of the pipeline:
@@ -18,6 +23,8 @@ The test suite is built using pytest and covers all major components of the pipe
 ## Quick Start
 
 ### Installation
+
+**Requirements**: Python 3.11 or 3.12
 
 ```bash
 # Install development dependencies
@@ -443,6 +450,11 @@ Tests the complete data pipeline with real API endpoints:
   - Complete integration test with all available data sources
   - Tests full pipeline from raw API data to clean, merged DataFrames
 
+- **Timezone Validation**: `test_data_timezone_is_utc()`
+  - Tests that all DataFrames have UTC timezone
+  - Validates CoinMetrics, FRED, and merged data timezone consistency
+  - Ensures timezone-aware datetime indexes across all data sources
+
 #### TestDataQualityValidation
 Tests comprehensive data quality validation with real data:
 
@@ -638,6 +650,7 @@ Tests use `unittest.mock` to avoid external dependencies:
 
 The test suite is designed to work in CI environments:
 
+- **Python Version Support**: Tests run on Python 3.11 and 3.12
 - **No GUI Dependencies**: Plotting tests mock matplotlib
 - **Network Independence**: Unit tests don't require internet
 - **Integration Test Isolation**: Marked separately for optional execution

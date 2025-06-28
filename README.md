@@ -2,6 +2,11 @@
 
 A Bitcoin DCA strategy backtesting framework for testing strategies against historical price data.
 
+## Requirements
+
+- Python 3.11 or 3.12
+- pip
+
 ## Installation
 
 ```bash
@@ -113,6 +118,8 @@ def your_strategy(df: pd.DataFrame) -> pd.Series:
 ## Development
 
 For development and testing:
+
+**Requirements**: Python 3.11 or 3.12
 
 ```bash
 # Clone the repository
