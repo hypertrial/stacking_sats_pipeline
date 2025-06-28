@@ -27,8 +27,18 @@ def validate_date_range(btc_df: pd.DataFrame, start_date: str, end_date: str) ->
     start_ts = pd.Timestamp(start_date)
     end_ts = pd.Timestamp(end_date)
 
+    # Handle empty DataFrame
+    if btc_df.empty:
+        raise ValueError("No historical data available")
+
     data_start = btc_df.index.min()
     data_end = btc_df.index.max()
+
+    # Handle timezone-aware data (only if index is DatetimeIndex)
+    if hasattr(btc_df.index, "tz") and btc_df.index.tz is not None:
+        # Convert timestamps to match the timezone of the data index
+        start_ts = start_ts.tz_localize(btc_df.index.tz)
+        end_ts = end_ts.tz_localize(btc_df.index.tz)
 
     if start_ts < data_start:
         raise ValueError(
@@ -142,6 +152,13 @@ def get_weights_for_period(start_date: str, end_date: str) -> pd.Series:
     weights = compute_weights_for_period(btc_df, end_date)
 
     start_ts, end_ts = pd.Timestamp(start_date), pd.Timestamp(end_date)
+
+    # Handle timezone-aware data
+    if weights.index.tz is not None:
+        # Convert timestamps to match the timezone of the weights index
+        start_ts = start_ts.tz_localize(weights.index.tz)
+        end_ts = end_ts.tz_localize(weights.index.tz)
+
     logger.info(
         f"Filtering weights for period: {start_ts.strftime('%Y-%m-%d')} to {end_ts.strftime('%Y-%m-%d')}"
     )
