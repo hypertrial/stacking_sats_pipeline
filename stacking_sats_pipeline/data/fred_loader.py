@@ -223,6 +223,11 @@ class FREDLoader:
 
         df = pd.read_csv(path, index_col=0, parse_dates=True, low_memory=False)
         df = df.loc[~df.index.duplicated(keep="last")].sort_index()
+        
+        # Convert naive datetime index to UTC timezone-aware
+        if df.index.tz is None:
+            df.index = df.index.tz_localize("UTC")
+        
         self._validate_data(df)
         return df
 
@@ -303,7 +308,8 @@ class FREDLoader:
             raise ValueError("Index must be DatetimeIndex.")
         if df.index.tz is None:
             raise ValueError("DatetimeIndex must be timezone-aware.")
-        if df.index.tz != pytz.UTC:
+        # Check if timezone is UTC (accept both pytz.UTC and pandas UTC)
+        if str(df.index.tz) != "UTC":
             raise ValueError("DatetimeIndex must be in UTC timezone.")
 
 
