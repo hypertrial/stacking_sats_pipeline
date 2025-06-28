@@ -343,7 +343,7 @@ class TestFREDLoader:
         """Test that load_from_file downloads data if file doesn't exist."""
         mock_df = pd.DataFrame(
             {"DXY_Value": [100.0, 101.0]},
-            index=pd.date_range("2020-01-01", periods=2, name="time"),
+            index=pd.date_range("2020-01-01", periods=2, name="time", tz="UTC"),
         )
         mock_load_web.return_value = mock_df
 
@@ -367,7 +367,7 @@ class TestFREDLoader:
         # Create test data
         test_data = pd.DataFrame(
             {"DXY_Value": [100.0, 101.0, 102.0]},
-            index=pd.date_range("2020-01-01", periods=3, name="time"),
+            index=pd.date_range("2020-01-01", periods=3, name="time", tz="UTC"),
         )
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -396,7 +396,7 @@ class TestFREDLoader:
         """Test load method with use_memory=True."""
         mock_df = pd.DataFrame(
             {"DXY_Value": [100.0]},
-            index=pd.date_range("2020-01-01", periods=1, name="time"),
+            index=pd.date_range("2020-01-01", periods=1, name="time", tz="UTC"),
         )
         mock_load_web.return_value = mock_df
 
@@ -411,7 +411,7 @@ class TestFREDLoader:
         """Test load method with use_memory=False."""
         mock_df = pd.DataFrame(
             {"DXY_Value": [100.0]},
-            index=pd.date_range("2020-01-01", periods=1, name="time"),
+            index=pd.date_range("2020-01-01", periods=1, name="time", tz="UTC"),
         )
         mock_load_file.return_value = mock_df
 
@@ -425,7 +425,7 @@ class TestFREDLoader:
         """Test data validation with valid data."""
         df = pd.DataFrame(
             {"DXY_Value": [100.0, 101.0]},
-            index=pd.date_range("2020-01-01", periods=2, name="time"),
+            index=pd.date_range("2020-01-01", periods=2, name="time", tz="UTC"),
         )
 
         loader = FREDLoader(api_key="test_key")
@@ -436,7 +436,7 @@ class TestFREDLoader:
         """Test data validation with missing DXY_Value column."""
         df = pd.DataFrame(
             {"OtherColumn": [100.0, 101.0]},
-            index=pd.date_range("2020-01-01", periods=2, name="time"),
+            index=pd.date_range("2020-01-01", periods=2, name="time", tz="UTC"),
         )
 
         loader = FREDLoader(api_key="test_key")
@@ -525,12 +525,12 @@ class TestFREDLoaderIntegration:
             if source == "coinmetrics":
                 return pd.DataFrame(
                     {"PriceUSD": [30000, 31000]},
-                    index=pd.date_range("2020-01-01", periods=2, name="time"),
+                    index=pd.date_range("2020-01-01", periods=2, name="time", tz="UTC"),
                 )
             elif source == "fred":
                 return pd.DataFrame(
                     {"DXY_Value": [100.0, 100.5]},
-                    index=pd.date_range("2020-01-01", periods=2, name="time"),
+                    index=pd.date_range("2020-01-01", periods=2, name="time", tz="UTC"),
                 )
             else:
                 raise ValueError(f"Unknown source: {source}")
@@ -578,7 +578,7 @@ class TestFREDLoaderBackwardCompatibility:
 
         mock_loader = MagicMock()
         mock_df = pd.DataFrame(
-            {"DXY_Value": [100.0]}, index=pd.date_range("2020-01-01", periods=1)
+            {"DXY_Value": [100.0]}, index=pd.date_range("2020-01-01", periods=1, tz="UTC")
         )
         mock_loader.load_from_web.return_value = mock_df
         mock_loader_class.return_value = mock_loader
