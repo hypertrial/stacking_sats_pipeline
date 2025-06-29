@@ -74,9 +74,9 @@ pytest -m integration
 | File | Purpose | Key Features |
 |------|---------|--------------|
 | `test_backtest.py` | Backtesting functionality | Strategy validation, performance metrics, result analysis |
-| `test_data.py` | Data loading and validation | CoinMetrics integration, CSV handling, data validation |
-| `test_data_extraction.py` | Data extraction and export | Multi-format export (CSV/Parquet), CLI integration, file validation |
-| `test_data_pipeline_e2e.py` | End-to-end data pipeline | Real API testing, Parquet support, file format conversion, data quality validation |
+| `test_data.py` | Data loading and validation | CoinMetrics integration, CSV handling, data validation, **timestamp alignment** |
+| `test_data_extraction.py` | Data extraction and export | Multi-format export (CSV/Parquet), CLI integration, file validation, **timestamp alignment verification** |
+| `test_data_pipeline_e2e.py` | End-to-end data pipeline | Real API testing, Parquet support, file format conversion, data quality validation, **timestamp alignment integration** |
 | `test_cli.py` | Command-line interface | Argument parsing, strategy loading, error handling, data extraction commands |
 | `test_config.py` | Configuration and metadata | Package metadata, constants validation |
 | `test_plot.py` | Plotting and visualization | Chart generation, matplotlib integration |
@@ -84,6 +84,84 @@ pytest -m integration
 | `test_weight_calculator.py` | Weight calculator functionality | Historical data constraints, date validation, CSV export |
 
 ## Detailed Test Documentation
+
+### Data Loading Tests (`test_data.py`)
+
+The data loading system has been refactored into a modular architecture with separate loaders for different data sources. See `stacking_sats_pipeline/data/CONTRIBUTE.md` for information on adding new data sources.
+
+#### TestDataLoading
+Tests data loading functionality with the new modular data loading system:
+
+- **Integration Data Loading**: `test_load_data_integration()`
+  - Tests `load_data()` with real CoinMetrics API via the new modular system
+  - Validates DataFrame structure and data quality
+  - Checks price data reasonableness
+
+- **Web Data Loading**: `test_load_btc_data_from_web_integration()`
+  - Tests direct web API calls through backward compatibility functions
+  - Validates data format and structure
+
+- **Data Validation**: Multiple validation tests with flexible validation system
+  - `test_validate_price_data_valid()`: Valid data handling
+  - `test_validate_price_data_missing_column()`: Missing price column detection (flexible - looks for any "Price" columns)
+  - `test_validate_price_data_specific_columns()`: Tests specific price column validation with custom requirements
+  - `test_validate_price_data_negative_prices()`: Price validation
+  - `test_validate_price_data_nan_values()`: NaN handling
+  - `test_validate_price_data_empty_dataframe()`: Empty data handling
+
+#### TestFREDLoader
+Tests for FRED data loader with API key functionality and comprehensive error handling:
+
+- **API Key Management**: Tests initialization with and without API keys
+- **Data Loading**: Tests successful data loading from FRED API
+- **Error Handling**: Tests HTTP errors, timeouts, invalid responses
+- **Data Validation**: Tests data structure and quality validation
+- **File Operations**: Tests CSV and Parquet extraction and loading
+
+#### TestFREDLoaderTimestampAlignment ⭐ **NEW**
+Tests for FRED loader timestamp alignment and normalization (addresses timestamp misalignment bug):
+
+- **Midnight UTC Normalization**: `test_fred_timestamps_normalized_to_midnight_utc()`
+  - Verifies all FRED timestamps are normalized to exactly midnight UTC (00:00:00+00:00)
+  - Ensures no hour/minute/second/microsecond components remain
+  - Critical for fixing the original 6-hour timestamp offset issue
+
+- **Cross-Source Consistency**: `test_fred_timestamp_consistency_with_other_sources()`
+  - Tests that FRED timestamps match CoinMetrics timestamp format exactly
+  - Verifies timestamps can be properly aligned for merging
+  - Ensures no timezone conversion artifacts
+
+- **DST and Edge Case Handling**: `test_fred_no_time_zone_conversion_artifacts()`
+  - Tests dates affected by Daylight Saving Time transitions
+  - Verifies year boundaries and special dates are handled correctly
+  - Ensures no timezone conversion creates unexpected time offsets
+
+#### TestDataSourceTimestampConsistency ⭐ **NEW**
+Tests for timestamp consistency across all data sources:
+
+- **Unified Midnight UTC**: `test_all_sources_use_midnight_utc()`
+  - Verifies all data sources (CoinMetrics, FRED, Fear&Greed) use midnight UTC
+  - Tests that timestamp formats are identical across sources
+  - Ensures consistent timezone handling
+
+- **Proper Data Merging**: `test_merged_data_has_proper_overlaps()`
+  - **Critical test**: Verifies the original timestamp alignment bug is fixed
+  - Tests that merged data has actual overlapping records (was 0 before fix)
+  - Validates that overlapping data contains correct values from both sources
+  - Ensures multi-source strategies can access all indicators
+
+#### TestDataUtilities
+Tests utility functions:
+
+- **CSV Extraction**: `test_extract_btc_data_to_csv_integration()`
+
+#### TestDataMocking
+Tests with mocked network responses:
+
+- **Mocked Web Loading**: `test_load_btc_data_from_web_mocked()`
+  - Uses unittest.mock to simulate API responses via the CoinMetrics loader
+  - Tests CSV parsing and data transformation through the new modular system
+  - Mocks `stacking_sats_pipeline.data.coinmetrics_loader.requests.get` for proper isolation
 
 ### Data Extraction Tests (`test_data_extraction.py`)
 
@@ -101,14 +179,17 @@ Tests the `extract_all_data()` Python API functionality:
   - Validates compression efficiency and data preservation
   - Ensures proper datetime indexing is maintained
 
-- **Default Directory Handling**: `test_extract_all_data_default_directory()`
-  - Tests extraction to current working directory when no path specified
-  - Validates proper Path object handling
+- **Timestamp Alignment Verification**: `test_extract_all_data_timestamp_alignment_verification()` ⭐ **NEW**
+  - **Critical integration test**: Verifies timestamp alignment fix works in CSV extraction
+  - Tests that all timestamps in extracted CSV are at midnight (normalized correctly)
+  - Validates that merged CSV files have substantial overlapping records between data sources
+  - Specifically tests BTC & DXY overlap (the original 0-overlap bug)
+  - Ensures the fix works end-to-end in the data extraction pipeline
 
-- **FRED API Key Handling**: `test_extract_all_data_no_fred_api_key()`
-  - Tests graceful handling when FRED API key is missing
-  - Ensures Bitcoin and Fear & Greed data still extracted
-  - Validates appropriate warning messages
+- **Data Integrity Validation**: `test_extract_all_data_data_integrity()`
+  - Validates extracted data maintains original quality
+  - Tests price ranges and data type preservation
+  - Ensures timezone consistency across formats
 
 - **Error Handling**: `test_extract_all_data_error_handling()`
   - Tests resilience when individual data sources fail
@@ -119,11 +200,6 @@ Tests the `extract_all_data()` Python API functionality:
   - Compares CSV vs Parquet file sizes
   - Validates compression efficiency (typically 40-60% reduction)
   - Tests storage optimization benefits
-
-- **Data Integrity Validation**: `test_extract_all_data_data_integrity()`
-  - Validates extracted data maintains original quality
-  - Tests price ranges and data type preservation
-  - Ensures timezone consistency across formats
 
 #### TestDataExtractionUtilities
 Tests utility functions and edge cases:
@@ -506,6 +582,14 @@ The end-to-end test suite provides comprehensive testing of the entire data pipe
 
 #### TestDataPipelineEndToEnd
 Tests the complete data pipeline with real API endpoints:
+
+- **Timestamp Alignment Integration**: `test_timestamp_alignment_integration()` ⭐ **NEW**
+  - **Comprehensive integration test**: Verifies the complete timestamp alignment fix with real APIs
+  - Tests that both CoinMetrics and FRED data use midnight UTC timestamps
+  - Validates that merged real data has substantial overlapping records (>100 days)
+  - **Critical validation**: Ensures the original 0-overlap bug is completely resolved
+  - Tests with actual API data to verify real-world fix effectiveness
+  - Validates overlapping data has reasonable values (price ranges, DXY ranges)
 
 - **Single Source Extraction**: `test_single_source_data_extraction_coinmetrics()`, `test_single_source_data_extraction_fred()`
   - Tests data extraction from CoinMetrics and FRED APIs with real data
