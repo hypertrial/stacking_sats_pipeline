@@ -1,6 +1,7 @@
 # Import all necessary functions and constants
 import argparse
 import importlib.util
+import os
 import sys
 from pathlib import Path
 
@@ -10,13 +11,106 @@ from .backtest.checks import (
 )
 from .backtest.simulation import run_full_simulation
 from .config import BACKTEST_END, BACKTEST_START
-from .data.data_loader import load_data, validate_price_data
+from .data.data_loader import MultiSourceDataLoader, load_data, validate_price_data
 from .plot.plotting import (
     plot_features,
     plot_final_weights,
     plot_spd_comparison,
     plot_weight_sums_by_cycle,
 )
+
+
+def extract_all_data(file_format: str = "csv", output_dir: str | Path | None = None) -> None:
+    """
+    Extract all available data sources to a single merged CSV or Parquet file.
+
+    Parameters
+    ----------
+    file_format : str, default "csv"
+        File format to extract data to. Options: "csv", "parquet".
+    output_dir : str or Path, optional
+        Directory to save file to. If None, saves to current directory.
+    """
+    if output_dir is None:
+        output_dir = Path.cwd()
+    else:
+        output_dir = Path(output_dir)
+
+    # Create output directory if it doesn't exist
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"\n{'=' * 60}")
+    print(f"EXTRACTING ALL DATA TO MERGED {file_format.upper()} FILE")
+    print(f"Output directory: {output_dir}")
+    print(f"{'=' * 60}")
+
+    # Determine available sources
+    loader = MultiSourceDataLoader()
+    available_sources = loader.get_available_sources()
+
+    # Always try to include these sources if available
+    sources_to_load = []
+    if "coinmetrics" in available_sources:
+        sources_to_load.append("coinmetrics")
+        print("✅ Bitcoin price data (CoinMetrics) - available")
+    else:
+        print("❌ Bitcoin price data (CoinMetrics) - not available")
+
+    if "feargreed" in available_sources:
+        sources_to_load.append("feargreed")
+        print("✅ Fear & Greed Index data - available")
+    else:
+        print("❌ Fear & Greed Index data - not available")
+
+    # Check for FRED API key
+    fred_api_key = os.getenv("FRED_API_KEY")
+    if not fred_api_key:
+        print("⚠️  FRED_API_KEY environment variable not found.")
+        print("   To include FRED data, set your API key: export FRED_API_KEY=your_key_here")
+        print("   Get a free API key at: https://fred.stlouisfed.org/docs/api/api_key.html")
+    else:
+        if "fred" in available_sources:
+            sources_to_load.append("fred")
+            print("✅ U.S. Dollar Index data (FRED) - available")
+        else:
+            print("❌ U.S. Dollar Index data (FRED) - not available")
+
+    if not sources_to_load:
+        print("❌ No data sources are available for extraction.")
+        return
+
+    try:
+        print(f"\n📊 Loading and merging data from {len(sources_to_load)} sources...")
+
+        # Load and merge all available data sources
+        merged_df = loader.load_and_merge(sources_to_load, use_memory=True)
+
+        # Determine output filename
+        if file_format.lower() == "parquet":
+            output_file = output_dir / "merged_crypto_data.parquet"
+            merged_df.to_parquet(output_file)
+        else:
+            output_file = output_dir / "merged_crypto_data.csv"
+            merged_df.to_csv(output_file)
+
+        # Calculate file size
+        file_size = output_file.stat().st_size / (1024 * 1024)  # Size in MB
+
+        print(f"\n{'=' * 60}")
+        print("EXTRACTION SUMMARY")
+        print(f"{'=' * 60}")
+        print(f"✅ Successfully merged {len(sources_to_load)} data sources:")
+        for source in sources_to_load:
+            print(f"   • {source}")
+        print(f"\n📁 Output file: {output_file.name} ({file_size:.1f} MB)")
+        print(f"📊 Format: {file_format.upper()}")
+        print(f"📈 Data shape: {merged_df.shape[0]:,} rows × {merged_df.shape[1]} columns")
+        print(f"📅 Date range: {merged_df.index.min()} to {merged_df.index.max()}")
+        print(f"\n✅ All data extracted to: {output_dir}")
+
+    except Exception as e:
+        print(f"❌ Failed to extract and merge data: {e}")
+        raise
 
 
 def load_strategy_from_file(strategy_path: str):
@@ -92,8 +186,24 @@ def main():
         default=10_000_000,
         help="Annual budget for simulation in USD (default: 10,000,000)",
     )
+    parser.add_argument(
+        "--extract-data",
+        choices=["csv", "parquet"],
+        help="Extract all data sources to specified format and exit",
+    )
+    parser.add_argument(
+        "--output-dir",
+        "-o",
+        type=str,
+        help="Output directory for extracted data files (default: current directory)",
+    )
 
     args = parser.parse_args()
+
+    # Handle data extraction mode
+    if args.extract_data:
+        extract_all_data(file_format=args.extract_data, output_dir=args.output_dir)
+        return  # Exit after extraction
 
     # Derive strategy name from file path
     strategy_path = Path(args.strategy)
@@ -117,8 +227,8 @@ def main():
                 strategy_module = importlib.import_module(f"strategy.{module_name}")
                 compute_weights = strategy_module.compute_weights
                 print(f"Loaded strategy from package: {args.strategy}")
-            except ImportError:
-                raise FileNotFoundError(f"Strategy module not found: {module_name}")
+            except ImportError as err:
+                raise FileNotFoundError(f"Strategy module not found: {module_name}") from err
         else:
             # Load from file path
             compute_weights = load_strategy_from_file(args.strategy)
@@ -173,12 +283,11 @@ def main():
                     if issues.get("has_below_min_weights"):
                         issue_list.append("below min weights")
                     if issues.get("weights_not_sum_to_one"):
-                        issue_list.append(
-                            f"sum={issues.get('weight_sum', 'unknown'):.6f}"
-                        )
+                        issue_list.append(f"sum={issues.get('weight_sum', 'unknown'):.6f}")
                     if issues.get("underperforms_uniform"):
                         issue_list.append(
-                            f"performance: {issues.get('dynamic_pct', 0):.2f}% < {issues.get('uniform_pct', 0):.2f}%"
+                            f"performance: {issues.get('dynamic_pct', 0):.2f}% < "
+                            f"{issues.get('uniform_pct', 0):.2f}%"
                         )
 
                     if issue_list:
@@ -195,16 +304,12 @@ def main():
 
     # Generate plots (only if not disabled)
     if not args.no_plot:
-        plot_features(
-            btc_df, weights=weights, start_date=BACKTEST_START, end_date=BACKTEST_END
-        )
+        plot_features(btc_df, weights=weights, start_date=BACKTEST_START, end_date=BACKTEST_END)
         plot_final_weights(weights, start_date=BACKTEST_START)
         plot_weight_sums_by_cycle(weights)
 
     # Run backtesting
-    df_spd = backtest_dynamic_dca(
-        btc_df, strategy_fn=compute_weights, strategy_label=strategy_name
-    )
+    df_spd = backtest_dynamic_dca(btc_df, strategy_fn=compute_weights, strategy_label=strategy_name)
     # check_strategy_submission_ready(btc_df, strategy_fn=compute_weights)
 
     # Generate comparison plot (only if not disabled)

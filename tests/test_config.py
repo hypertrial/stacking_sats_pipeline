@@ -75,7 +75,8 @@ class TestConfigConstants:
             assert start_date < end_date
         except ValueError:
             pytest.fail(
-                f"Invalid date format in BACKTEST_START ({BACKTEST_START}) or BACKTEST_END ({BACKTEST_END})"
+                f"Invalid date format in BACKTEST_START ({BACKTEST_START}) or "
+                f"BACKTEST_END ({BACKTEST_END})"
             )
 
     def test_purchase_freq_valid(self):

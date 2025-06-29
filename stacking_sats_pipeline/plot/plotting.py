@@ -130,9 +130,7 @@ def plot_final_weights(
 
     # ── compute cycle labels ───────────────────────────────────────────────
     start_year = pd.to_datetime(start_date).year
-    cycle_indices = weights.index.to_series().apply(
-        lambda dt: _cycle_idx(dt, start_year)
-    )
+    cycle_indices = weights.index.to_series().apply(lambda dt: _cycle_idx(dt, start_year))
 
     # ── plot ───────────────────────────────────────────────────────────────
     cmap = plt.get_cmap("tab10")
@@ -211,9 +209,7 @@ def plot_weight_sums_by_cycle(
 
     # ── aggregate sums ────────────────────────────────────────────────────
     start_year = pd.to_datetime(start_date).year
-    cycle_indices = weights.index.to_series().apply(
-        lambda dt: _cycle_idx(dt, start_year)
-    )
+    cycle_indices = weights.index.to_series().apply(lambda dt: _cycle_idx(dt, start_year))
     weight_sums = weights.groupby(cycle_indices).sum()
 
     # ── console printout ──────────────────────────────────────────────────
@@ -245,7 +241,7 @@ def plot_spd_comparison(
     fig, ax1 = plt.subplots(figsize=(14, 6))
     ax1.set_yscale("log")
 
-    # ── SPD curves in desired order: max ▸ dynamic ▸ static_dca ▸ uniform ▸ min ──────────
+    # ── SPD curves in desired order: max ▸ dynamic ▸ static_dca ▸ uniform ▸ m
     lines = ax1.plot(
         x,
         df_res["max_spd"],
@@ -287,12 +283,8 @@ def plot_spd_comparison(
     # ── Percentile bars ────────────────────────────────────────────────────
     ax2 = ax1.twinx()
     bar_w = 0.25  # Narrower bars to fit three categories
-    bar1 = ax2.bar(
-        x - bar_w, df_res["uniform_pct"], width=bar_w, alpha=0.3, label="Uniform %"
-    )
-    bar2 = ax2.bar(
-        x, df_res["static_dca_pct"], width=bar_w, alpha=0.3, label="Static DCA (30%)"
-    )
+    bar1 = ax2.bar(x - bar_w, df_res["uniform_pct"], width=bar_w, alpha=0.3, label="Uniform %")
+    bar2 = ax2.bar(x, df_res["static_dca_pct"], width=bar_w, alpha=0.3, label="Static DCA (30%)")
     bar3 = ax2.bar(
         x + bar_w,
         df_res["dynamic_pct"],

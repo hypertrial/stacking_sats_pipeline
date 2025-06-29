@@ -23,6 +23,11 @@ Or using the decorator approach:
     ... def my_strategy(df):
     ...     # Your strategy logic here
     ...     return weights
+
+Data Extraction:
+    >>> from stacking_sats_pipeline import extract_all_data
+    >>> extract_all_data("csv")  # Extract all data to CSV
+    >>> extract_all_data("parquet", "data/")  # Extract to Parquet in data/ folder
 """
 
 # New simplified interface (recommended)
@@ -50,6 +55,7 @@ from .data import (
     load_data,
     validate_price_data,
 )
+from .main import extract_all_data
 from .plot import (
     plot_features,
     plot_final_weights,
@@ -75,6 +81,7 @@ __all__ = [
     # Data loading
     "extract_btc_data_to_csv",
     "extract_btc_data_to_parquet",
+    "extract_all_data",
     "load_data",
     "load_btc_data_from_web",
     "validate_price_data",

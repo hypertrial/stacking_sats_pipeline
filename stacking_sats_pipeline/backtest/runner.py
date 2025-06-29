@@ -3,7 +3,8 @@ Simple backtest runner for strategy functions.
 Provides a clean PyPI library experience for backtesting.
 """
 
-from typing import Any, Callable, Dict, Optional
+from collections.abc import Callable
+from typing import Any
 
 import pandas as pd
 
@@ -23,9 +24,7 @@ except ImportError:
 class BacktestResults:
     """Container for backtest results with convenient access methods."""
 
-    def __init__(
-        self, strategy_fn: Callable, df: pd.DataFrame, results: Dict[str, Any]
-    ):
+    def __init__(self, strategy_fn: Callable, df: pd.DataFrame, results: dict[str, Any]):
         self.strategy_fn = strategy_fn
         self.df = df
         self.results = results
@@ -46,7 +45,7 @@ class BacktestResults:
         return self.results.get("spd_table")
 
     @property
-    def validation(self) -> Dict[str, Any]:
+    def validation(self) -> dict[str, Any]:
         """Get validation results."""
         return self.results.get("validation", {})
 
@@ -55,9 +54,7 @@ class BacktestResults:
         """Check if strategy passed all validation checks."""
         return self.validation.get("validation_passed", False)
 
-    def save_weights_to_csv(
-        self, filename: Optional[str] = None, budget: Optional[float] = None
-    ) -> str:
+    def save_weights_to_csv(self, filename: str | None = None, budget: float | None = None) -> str:
         """
         Save backtest period weights to CSV file.
 
@@ -83,7 +80,7 @@ class BacktestResults:
         return filename
 
     def save_weights_to_parquet(
-        self, filename: Optional[str] = None, budget: Optional[float] = None
+        self, filename: str | None = None, budget: float | None = None
     ) -> str:
         """
         Save backtest period weights to Parquet file.
@@ -109,7 +106,7 @@ class BacktestResults:
         print(f"Model weights saved to: {filename}")
         return filename
 
-    def _create_weights_dataframe(self, budget: Optional[float] = None) -> pd.DataFrame:
+    def _create_weights_dataframe(self, budget: float | None = None) -> pd.DataFrame:
         """
         Create a DataFrame with weights and metadata for export.
 
@@ -160,8 +157,8 @@ class BacktestResults:
 
     def save_weights(
         self,
-        filename: Optional[str] = None,
-        budget: Optional[float] = None,
+        filename: str | None = None,
+        budget: float | None = None,
         file_format: str = "csv",
     ) -> str:
         """
@@ -180,7 +177,7 @@ class BacktestResults:
         else:
             return self.save_weights_to_csv(filename, budget)
 
-    def display_weight_statistics(self, budget: Optional[float] = None):
+    def display_weight_statistics(self, budget: float | None = None):
         """
         Display statistical summary of the model weights for the backtest period.
 
@@ -193,7 +190,8 @@ class BacktestResults:
         print("MODEL WEIGHTS STATISTICS")
         print(f"Strategy: {getattr(self.strategy_fn, '__name__', 'Strategy')}")
         print(
-            f"Period: {self.df.index.min().strftime('%Y-%m-%d')} to {self.df.index.max().strftime('%Y-%m-%d')}"
+            f"Period: {self.df.index.min().strftime('%Y-%m-%d')} to "
+            f"{self.df.index.max().strftime('%Y-%m-%d')}"
         )
         print(f"{'=' * 60}")
 
@@ -224,7 +222,7 @@ class BacktestResults:
                 print(f"Total BTC accumulated: {total_btc:.8f}")
                 print(f"Average price paid: ${budget / total_btc:.2f}")
 
-    def export_weights_summary(self, filename: Optional[str] = None) -> str:
+    def export_weights_summary(self, filename: str | None = None) -> str:
         """
         Export a summary of model weights by cycle to CSV.
 
@@ -277,7 +275,7 @@ class BacktestResults:
         print(f"Weights summary saved to: {filename}")
         return filename
 
-    def get_weights_dataframe(self, budget: Optional[float] = None) -> pd.DataFrame:
+    def get_weights_dataframe(self, budget: float | None = None) -> pd.DataFrame:
         """
         Get model weights as a pandas DataFrame with additional computed columns.
 
@@ -413,16 +411,16 @@ class BacktestResults:
 def backtest(
     strategy_fn: Callable,
     *,
-    data: Optional[pd.DataFrame] = None,
+    data: pd.DataFrame | None = None,
     start_date: str = BACKTEST_START,
     end_date: str = BACKTEST_END,
     cycle_years: int = CYCLE_YEARS,
     validate: bool = True,
     verbose: bool = True,
-    strategy_name: Optional[str] = None,
+    strategy_name: str | None = None,
     export_weights: bool = False,
-    export_dir: Optional[str] = None,
-    export_budget: Optional[float] = None,
+    export_dir: str | None = None,
+    export_budget: float | None = None,
 ) -> BacktestResults:
     """
     Backtest a strategy function with a clean, simple interface.
@@ -547,7 +545,7 @@ def quick_backtest(strategy_fn: Callable, **kwargs) -> float:
 # Decorator version for even cleaner syntax
 def strategy(
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     cycle_years: int = CYCLE_YEARS,
     auto_backtest: bool = False,
 ):

@@ -36,9 +36,7 @@ def compute_cycle_spd(df, strategy_fn, *, cycle_years: int = CYCLE_YEARS):
     inverted_prices = (1 / df_backtest["PriceUSD"]) * 1e8  # satoshi-per-dollar
 
     rows = []
-    for current, end_date, cycle_mask, cycle in _get_cycle_boundaries(
-        df_backtest, cycle_years
-    ):
+    for current, end_date, _cycle_mask, cycle in _get_cycle_boundaries(df_backtest, cycle_years):
         label = _make_cycle_label(current, end_date, cycle_years)
 
         # Compute SPD metrics
@@ -105,37 +103,39 @@ def backtest_dynamic_dca(
 
     mean_excess = res["excess_pct"].mean()
     mean_excess_vs_static = res["excess_vs_static_dca"].mean()
+    print(f"\nMean Excess SPD Percentile Difference (Dynamic – Uniform): {mean_excess:.2f}%")
     print(
-        f"\nMean Excess SPD Percentile Difference (Dynamic – Uniform): {mean_excess:.2f}%"
-    )
-    print(
-        f"Mean Excess SPD Percentile Difference (Dynamic – Static DCA 30%): {mean_excess_vs_static:.2f}%"
+        f"Mean Excess SPD Percentile Difference (Dynamic – Static DCA 30%): "
+        f"{mean_excess_vs_static:.2f}%"
     )
 
     # Add detailed SPD comparison table (actual values)
+    print(f"\nSPD Comparison (Uniform vs Static DCA vs {strategy_label}) - Sats per Dollar:")
     print(
-        f"\nSPD Comparison (Uniform vs Static DCA vs {strategy_label}) - Sats per Dollar:"
-    )
-    print(
-        f"{'Cycle':<8} {'Uniform SPD':<12} {'Static DCA SPD':<13} {f'{strategy_label} SPD':<15} {'vs Uniform':<12} {'vs Static':<12}"
+        f"{'Cycle':<8} {'Uniform SPD':<12} {'Static DCA SPD':<13} "
+        f"{f'{strategy_label} SPD':<15} {'vs Uniform':<12} {'vs Static':<12}"
     )
     print("-" * 85)
     for cycle, row in res.iterrows():
         uniform_diff = row["dynamic_spd"] - row["uniform_spd"]
         static_diff = row["dynamic_spd"] - row["static_dca_spd"]
         print(
-            f"{cycle:<8} {row['uniform_spd']:<12.2f} {row['static_dca_spd']:<13.2f} {row['dynamic_spd']:<15.2f} {uniform_diff:<12.2f} {static_diff:<12.2f}"
+            f"{cycle:<8} {row['uniform_spd']:<12.2f} {row['static_dca_spd']:<13.2f} "
+            f"{row['dynamic_spd']:<15.2f} {uniform_diff:<12.2f} {static_diff:<12.2f}"
         )
 
     # Add detailed SPD percentile comparison table
     print(f"\nSPD Percentile Comparison (Uniform vs Static DCA vs {strategy_label}):")
     print(
-        f"{'Cycle':<8} {'Uniform %':<12} {'Static DCA %':<12} {f'{strategy_label} %':<15} {'vs Uniform':<12} {'vs Static':<12}"
+        f"{'Cycle':<8} {'Uniform %':<12} {'Static DCA %':<12} "
+        f"{f'{strategy_label} %':<15} {'vs Uniform':<12} {'vs Static':<12}"
     )
     print("-" * 80)
     for cycle, row in res.iterrows():
         print(
-            f"{cycle:<8} {row['uniform_pct']:<12.2f} {row['static_dca_pct']:<12.2f} {row['dynamic_pct']:<15.2f} {row['excess_pct']:<12.2f} {row['excess_vs_static_dca']:<12.2f}"
+            f"{cycle:<8} {row['uniform_pct']:<12.2f} {row['static_dca_pct']:<12.2f} "
+            f"{row['dynamic_pct']:<15.2f} {row['excess_pct']:<12.2f} "
+            f"{row['excess_vs_static_dca']:<12.2f}"
         )
 
     print("\nExcess SPD Percentile Difference (Dynamic – Uniform) per Cycle:")
@@ -159,18 +159,14 @@ def _validate_cycle_constraints(df_backtest, full_weights, cycle_years):
     has_below_min_weights = False
     weights_not_sum_to_one = False
 
-    for current, end_date, cycle_mask, cycle in _get_cycle_boundaries(
-        df_backtest, cycle_years
-    ):
+    for current, end_date, _cycle_mask, cycle in _get_cycle_boundaries(df_backtest, cycle_years):
         w_slice = full_weights.loc[cycle.index]
         cycle_label = _make_cycle_label(current, end_date, cycle_years)
         cycle_issues[cycle_label] = {}
 
         # Criterion 1: strictly positive
         if (w_slice <= 0).any():
-            validation_messages.append(
-                f"[{cycle_label}] Some weights are zero or negative."
-            )
+            validation_messages.append(f"[{cycle_label}] Some weights are zero or negative.")
             passed = False
             has_negative_weights = True
             cycle_issues[cycle_label]["has_negative_weights"] = True
@@ -185,12 +181,11 @@ def _validate_cycle_constraints(df_backtest, full_weights, cycle_years):
             cycle_issues[cycle_label]["has_below_min_weights"] = True
 
         # Criterion 3: weights must sum to 1 over the entire cycle
-        total_weight = (
-            w_slice.sum().sum() if isinstance(w_slice, pd.DataFrame) else w_slice.sum()
-        )
+        total_weight = w_slice.sum().sum() if isinstance(w_slice, pd.DataFrame) else w_slice.sum()
         if not np.isclose(total_weight, 1.0, rtol=1e-5, atol=1e-8):
             validation_messages.append(
-                f"[{cycle_label}] Total weights across the cycle do not sum to 1 (sum = {total_weight:.6f})."
+                f"[{cycle_label}] Total weights across the cycle do not sum to 1 "
+                f"(sum = {total_weight:.6f})."
             )
             passed = False
             weights_not_sum_to_one = True
@@ -323,10 +318,7 @@ def _test_causality(strategy_fn, df, cycle_years):
 
             weights_perturbed = strategy_func(df_perturbed)
 
-            if (
-                test_date in weights_original.index
-                and test_date in weights_perturbed.index
-            ):
+            if test_date in weights_original.index and test_date in weights_perturbed.index:
                 original_weight = weights_original.loc[test_date]
                 perturbed_weight = weights_perturbed.loc[test_date]
 
@@ -335,12 +327,12 @@ def _test_causality(strategy_fn, df, cycle_years):
                 if pd.isna(perturbed_weight):
                     perturbed_weight = 0
 
-                if not np.allclose(
-                    [original_weight], [perturbed_weight], rtol=rtol, atol=atol
-                ):
+                if not np.allclose([original_weight], [perturbed_weight], rtol=rtol, atol=atol):
                     validation_messages.append(
-                        f"Weight at time {test_date.strftime('%Y-%m-%d')} changes when future data in the same cycle is perturbed. "
-                        f"This indicates forward-looking bias in weight computation (e.g., cycle-wide normalization)."
+                        f"Weight at time {test_date.strftime('%Y-%m-%d')} changes when "
+                        f"future data in the same cycle is perturbed. "
+                        f"This indicates forward-looking bias in weight computation "
+                        f"(e.g., cycle-wide normalization)."
                     )
                     return False
 
@@ -363,28 +355,23 @@ def _test_causality(strategy_fn, df, cycle_years):
                 module_name = strategy_fn.__module__
                 if module_name in sys.modules:
                     strategy_module = sys.modules[module_name]
-                    construct_features = getattr(
-                        strategy_module, "construct_features", None
-                    )
+                    construct_features = getattr(strategy_module, "construct_features", None)
             except Exception:
                 pass
 
         if construct_features is None and hasattr(strategy_fn, "__globals__"):
             try:
-                construct_features = strategy_fn.__globals__.get(
-                    "construct_features", None
-                )
+                construct_features = strategy_fn.__globals__.get("construct_features", None)
             except Exception:
                 pass
 
         # Test feature causality if possible
         if construct_features is not None:
-            is_feature_causal = is_causal(
-                construct_features, df, test_indices, perturb_func
-            )
+            is_feature_causal = is_causal(construct_features, df, test_indices, perturb_func)
             if not is_feature_causal:
                 validation_messages.append(
-                    "Strategy features may be forward-looking: they use information from future data."
+                    "Strategy features may be forward-looking: they use information "
+                    "from future data."
                 )
                 is_forward_looking = True
 
@@ -435,8 +422,8 @@ def validate_strategy_comprehensive(
     validation_results.update(constraint_flags)
 
     # Validate performance
-    performance_passed, perf_cycle_issues, perf_messages, perf_flags = (
-        _validate_performance(df, strategy_fn, cycle_years)
+    performance_passed, perf_cycle_issues, perf_messages, perf_flags = _validate_performance(
+        df, strategy_fn, cycle_years
     )
     passed &= performance_passed
     all_validation_messages.extend(perf_messages)
@@ -481,9 +468,7 @@ def validate_strategy_comprehensive(
             print(f"   {message}")
 
         if causality_check_error:
-            print(
-                f"   Note: Causality check could not be performed - {causality_check_error}"
-            )
+            print(f"   Note: Causality check could not be performed - {causality_check_error}")
         elif not is_forward_looking:
             print("   • ✅ Causality check: Strategy appears to be causal")
 

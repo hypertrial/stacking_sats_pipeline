@@ -5,7 +5,7 @@ This module simulates how much Bitcoin would be accumulated over time
 with a fixed annual budget using different DCA strategies.
 """
 
-from typing import Callable
+from collections.abc import Callable
 
 import pandas as pd
 
@@ -149,9 +149,7 @@ def print_simulation_summary(
     print(f"  Price Difference: ${avg_strategy_price - avg_uniform_price:+,.2f}")
 
     print("\nPER-CYCLE BREAKDOWN:")
-    print(
-        f"{'Cycle':<8} {'Uniform DCA':<15} {'Custom Strategy':<15} {'Excess Bitcoin':<15}"
-    )
+    print(f"{'Cycle':<8} {'Uniform DCA':<15} {'Custom Strategy':<15} {'Excess Bitcoin':<15}")
     print(f"{'':8} {'(BTC)':<15} {'(BTC)':<15} {'(BTC)':<15}")
     print(f"{'-' * 65}")
 

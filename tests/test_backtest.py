@@ -73,10 +73,8 @@ class TestBacktestingCore:
         try:
             result = quick_backtest(strategy_func)
 
-            assert isinstance(result, (int, float))
-            assert result > 0, (
-                "Quick backtest should return positive performance metric"
-            )
+            assert isinstance(result, int | float)
+            assert result > 0, "Quick backtest should return positive performance metric"
 
         except Exception as e:
             pytest.skip(f"Skipping integration test due to data issue: {e}")
@@ -195,7 +193,7 @@ class TestStrategyValidation:
 
         try:
             # This function might print results or return validation status
-            result = check_strategy_submission_ready(df, valid_strategy)
+            check_strategy_submission_ready(df, valid_strategy)
             # The function might not return anything, just validate
 
         except Exception as e:
@@ -213,7 +211,7 @@ class TestStrategyValidation:
 
         try:
             # This should either raise an exception or indicate failure
-            result = check_strategy_submission_ready(df, invalid_strategy)
+            check_strategy_submission_ready(df, invalid_strategy)
 
         except (ValueError, AssertionError):
             # Expected to fail with invalid strategy
@@ -249,7 +247,6 @@ class TestLegacyBacktesting:
             assert not result.empty
 
             # Check for expected columns (depends on implementation)
-            expected_cols = ["dynamic_spd", "uniform_spd", "dynamic_pct", "uniform_pct"]
             available_cols = result.columns.tolist()
 
             # At least some SPD-related columns should exist
@@ -269,9 +266,7 @@ class TestLegacyBacktesting:
 
         try:
             # Capture output (function prints results)
-            result = backtest_dynamic_dca(
-                df, test_strategy, strategy_label="Test Strategy"
-            )
+            result = backtest_dynamic_dca(df, test_strategy, strategy_label="Test Strategy")
 
             assert isinstance(result, pd.DataFrame)
             assert not result.empty
@@ -327,7 +322,4 @@ class TestStrategyPatterns:
 
         # Should be decreasing
         weight_values = weights.values
-        assert all(
-            weight_values[i] >= weight_values[i + 1]
-            for i in range(len(weight_values) - 1)
-        )
+        assert all(weight_values[i] >= weight_values[i + 1] for i in range(len(weight_values) - 1))

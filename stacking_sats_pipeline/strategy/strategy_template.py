@@ -44,9 +44,7 @@ def compute_weights(df: pd.DataFrame, *, cycle_years: int = CYCLE_YEARS) -> pd.S
     weights = pd.Series(index=df_feat.index, dtype=float)
 
     start_year = pd.to_datetime(BACKTEST_START).year
-    cycle_labels = df_feat.index.to_series().apply(
-        lambda ts: (ts.year - start_year) // cycle_years
-    )
+    cycle_labels = df_feat.index.to_series().apply(lambda ts: (ts.year - start_year) // cycle_years)
 
     # ── loop over cycles ────────────────────────────────────────────────
     for _, cycle_df in df_feat.groupby(cycle_labels):

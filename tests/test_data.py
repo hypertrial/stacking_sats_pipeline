@@ -201,9 +201,7 @@ class TestFREDLoader:
                 FREDLoader()
 
             assert "FRED API key is required" in str(exc_info.value)
-            assert "https://fred.stlouisfed.org/docs/api/api_key.html" in str(
-                exc_info.value
-            )
+            assert "https://fred.stlouisfed.org/docs/api/api_key.html" in str(exc_info.value)
 
     @patch.dict(os.environ, {"FRED_API_KEY": "env_test_key"})
     def test_fred_loader_initialization_from_env(self):
@@ -514,9 +512,7 @@ class TestFREDLoaderIntegration:
             assert len(df) == 2
             assert "DXY_Value" in df.columns
 
-    @patch(
-        "stacking_sats_pipeline.data.data_loader.MultiSourceDataLoader.load_from_source"
-    )
+    @patch("stacking_sats_pipeline.data.data_loader.MultiSourceDataLoader.load_from_source")
     def test_load_and_merge_with_fred(self, mock_load_from_source):
         """Test loading and merging data including FRED source."""
 
@@ -578,7 +574,8 @@ class TestFREDLoaderBackwardCompatibility:
 
         mock_loader = MagicMock()
         mock_df = pd.DataFrame(
-            {"DXY_Value": [100.0]}, index=pd.date_range("2020-01-01", periods=1, tz="UTC")
+            {"DXY_Value": [100.0]},
+            index=pd.date_range("2020-01-01", periods=1, tz="UTC"),
         )
         mock_loader.load_from_web.return_value = mock_df
         mock_loader_class.return_value = mock_loader

@@ -7,11 +7,10 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
-import requests
 import pytz
+import requests
 
 # Load environment variables if available
 try:
@@ -38,9 +37,7 @@ class FREDLoader:
     DEFAULT_FILENAME = "dxy_fred.csv"
     SERIES_ID = "DTWEXBGS"  # Nominal Broad U.S. Dollar Index
 
-    def __init__(
-        self, data_dir: str | Path | None = None, api_key: Optional[str] = None
-    ):
+    def __init__(self, data_dir: str | Path | None = None, api_key: str | None = None):
         """
         Initialize FRED loader.
 
@@ -108,14 +105,12 @@ class FREDLoader:
                 # Skip missing values (marked as '.' in FRED)
                 if value != ".":
                     # Parse date as CDT (FRED's timezone) and convert to UTC
-                    cdt_tz = pytz.timezone('America/Chicago')
+                    cdt_tz = pytz.timezone("America/Chicago")
                     naive_dt = pd.to_datetime(date)
                     cdt_dt = cdt_tz.localize(naive_dt)
                     utc_dt = cdt_dt.astimezone(pytz.UTC)
-                    
-                    df_data.append(
-                        {"date": utc_dt, "DXY_Value": float(value)}
-                    )
+
+                    df_data.append({"date": utc_dt, "DXY_Value": float(value)})
 
             if not df_data:
                 raise ValueError("No valid data points found in FRED response")
@@ -127,9 +122,7 @@ class FREDLoader:
             # Remove duplicates and sort
             dxy_df = dxy_df.loc[~dxy_df.index.duplicated(keep="last")].sort_index()
 
-            logging.info(
-                "Loaded FRED U.S. Dollar Index data into memory (%d rows)", len(dxy_df)
-            )
+            logging.info("Loaded FRED U.S. Dollar Index data into memory (%d rows)", len(dxy_df))
             self._validate_data(dxy_df)
 
             return dxy_df
@@ -174,7 +167,8 @@ class FREDLoader:
         Parameters
         ----------
         local_path : str or Path, optional
-            Destination Parquet path. If None, defaults to DEFAULT_FILENAME with .parquet extension in data_dir.
+            Destination Parquet path. If None, defaults to DEFAULT_FILENAME with
+            .parquet extension in data_dir.
 
         Returns
         -------
@@ -223,11 +217,11 @@ class FREDLoader:
 
         df = pd.read_csv(path, index_col=0, parse_dates=True, low_memory=False)
         df = df.loc[~df.index.duplicated(keep="last")].sort_index()
-        
+
         # Convert naive datetime index to UTC timezone-aware
         if df.index.tz is None:
             df.index = df.index.tz_localize("UTC")
-        
+
         self._validate_data(df)
         return df
 
@@ -238,7 +232,8 @@ class FREDLoader:
         Parameters
         ----------
         path : str or Path, optional
-            Path to the Parquet file. If None, defaults to DEFAULT_FILENAME with .parquet extension in data_dir.
+            Path to the Parquet file. If None, defaults to DEFAULT_FILENAME with
+            .parquet extension in data_dir.
 
         Returns
         -------
@@ -301,9 +296,7 @@ class FREDLoader:
         Basic sanity‑check on the FRED dataframe.
         """
         if df.empty or "DXY_Value" not in df.columns:
-            raise ValueError(
-                "Invalid FRED U.S. Dollar Index data – 'DXY_Value' column missing."
-            )
+            raise ValueError("Invalid FRED U.S. Dollar Index data – 'DXY_Value' column missing.")
         if not isinstance(df.index, pd.DatetimeIndex):
             raise ValueError("Index must be DatetimeIndex.")
         if df.index.tz is None:
@@ -314,14 +307,14 @@ class FREDLoader:
 
 
 # Convenience functions for backward compatibility
-def load_dxy_data_from_web(api_key: Optional[str] = None) -> pd.DataFrame:
+def load_dxy_data_from_web(api_key: str | None = None) -> pd.DataFrame:
     """Load FRED U.S. Dollar Index data from web (backward compatibility)."""
     loader = FREDLoader(api_key=api_key)
     return loader.load_from_web()
 
 
 def extract_dxy_data_to_csv(
-    local_path: str | Path | None = None, api_key: Optional[str] = None
+    local_path: str | Path | None = None, api_key: str | None = None
 ) -> None:
     """Extract FRED U.S. Dollar Index data to CSV (backward compatibility)."""
     loader = FREDLoader(api_key=api_key)
@@ -329,7 +322,7 @@ def extract_dxy_data_to_csv(
 
 
 def extract_dxy_data_to_parquet(
-    local_path: str | Path | None = None, api_key: Optional[str] = None
+    local_path: str | Path | None = None, api_key: str | None = None
 ) -> None:
     """Extract FRED U.S. Dollar Index data to Parquet (backward compatibility)."""
     loader = FREDLoader(api_key=api_key)

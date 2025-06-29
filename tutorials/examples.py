@@ -418,7 +418,7 @@ def _(comparison_df):
     print("\n📈 SUMMARY OF ALL RESULTS:")
     print("-" * 30)
     for strategy_name, excess in zip(
-        comparison_df["Strategy"], comparison_df["Excess SPD (%)"]
+        comparison_df["Strategy"], comparison_df["Excess SPD (%)"], strict=False
     ):
         emoji = "🥇" if strategy_name == comparison_df.iloc[0]["Strategy"] else "📊"
         print(f"{emoji} {strategy_name}: {excess:+.2f}% vs uniform DCA")

@@ -142,9 +142,7 @@ class TestWeightCalculation:
     def create_mock_data_and_weights(self):
         """Create mock data and corresponding weights for testing."""
         dates = pd.date_range("2020-01-01", periods=100, freq="D")
-        btc_df = pd.DataFrame(
-            {"PriceUSD": np.random.uniform(30000, 50000, 100)}, index=dates
-        )
+        btc_df = pd.DataFrame({"PriceUSD": np.random.uniform(30000, 50000, 100)}, index=dates)
         weights = pd.Series(
             np.random.uniform(0.005, 0.015, 100),  # Small positive weights
             index=dates,
@@ -152,15 +150,9 @@ class TestWeightCalculation:
         weights = weights / weights.sum()  # Normalize to sum to 1
         return btc_df, weights
 
-    @patch(
-        "stacking_sats_pipeline.weights.weight_calculator.get_historical_data_for_period"
-    )
-    @patch(
-        "stacking_sats_pipeline.weights.weight_calculator.compute_weights_for_period"
-    )
-    def test_get_weights_for_period_valid_range(
-        self, mock_compute_weights, mock_get_data
-    ):
+    @patch("stacking_sats_pipeline.weights.weight_calculator.get_historical_data_for_period")
+    @patch("stacking_sats_pipeline.weights.weight_calculator.compute_weights_for_period")
+    def test_get_weights_for_period_valid_range(self, mock_compute_weights, mock_get_data):
         """Test get_weights_for_period with valid date range."""
         btc_df, expected_weights = self.create_mock_data_and_weights()
         mock_get_data.return_value = btc_df
@@ -173,14 +165,10 @@ class TestWeightCalculation:
         mock_get_data.assert_called_once_with("2020-01-01", "2020-04-09")
         mock_compute_weights.assert_called_once()
 
-    @patch(
-        "stacking_sats_pipeline.weights.weight_calculator.get_historical_data_for_period"
-    )
+    @patch("stacking_sats_pipeline.weights.weight_calculator.get_historical_data_for_period")
     def test_get_weights_for_period_invalid_range(self, mock_get_data):
         """Test get_weights_for_period with invalid date range."""
-        mock_get_data.side_effect = ValueError(
-            "Start date 2019-01-01 is before available data"
-        )
+        mock_get_data.side_effect = ValueError("Start date 2019-01-01 is before available data")
 
         with pytest.raises(ValueError) as exc_info:
             get_weights_for_period("2019-01-01", "2019-06-01")
@@ -188,12 +176,8 @@ class TestWeightCalculation:
         assert "before available data" in str(exc_info.value)
 
     @patch("stacking_sats_pipeline.weights.weight_calculator.get_weights_for_period")
-    @patch(
-        "stacking_sats_pipeline.weights.weight_calculator.get_historical_data_for_period"
-    )
-    def test_display_weights_historical_constraint(
-        self, mock_get_data, mock_get_weights
-    ):
+    @patch("stacking_sats_pipeline.weights.weight_calculator.get_historical_data_for_period")
+    def test_display_weights_historical_constraint(self, mock_get_data, mock_get_weights):
         """Test that display_weights respects historical data constraints."""
         btc_df, weights = self.create_mock_data_and_weights()
         mock_get_data.return_value = btc_df
@@ -248,9 +232,7 @@ class TestHistoricalDataConstraints:
         assert "before available data starts" in str(exc_info.value)
 
     @patch("stacking_sats_pipeline.weights.weight_calculator.get_weights_for_period")
-    @patch(
-        "stacking_sats_pipeline.weights.weight_calculator.get_historical_data_for_period"
-    )
+    @patch("stacking_sats_pipeline.weights.weight_calculator.get_historical_data_for_period")
     def test_csv_export_historical_constraint(self, mock_get_data, mock_get_weights):
         """Test that CSV export respects historical data constraints."""
         btc_df = pd.DataFrame(
@@ -263,9 +245,7 @@ class TestHistoricalDataConstraints:
         mock_get_weights.return_value = weights
 
         with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as tmp_file:
-            filename = save_weights_to_csv(
-                1000, "2020-01-01", "2020-01-03", tmp_file.name
-            )
+            filename = save_weights_to_csv(1000, "2020-01-01", "2020-01-03", tmp_file.name)
 
             # Should have created the file
             assert filename == tmp_file.name
@@ -343,9 +323,7 @@ class TestIntegrationWithRealConstraints:
 
             # These should fail
             with pytest.raises(ValueError):
-                get_historical_data_for_period(
-                    before_start, data_start.strftime("%Y-%m-%d")
-                )
+                get_historical_data_for_period(before_start, data_start.strftime("%Y-%m-%d"))
 
             with pytest.raises(ValueError):
                 get_historical_data_for_period(data_end.strftime("%Y-%m-%d"), after_end)

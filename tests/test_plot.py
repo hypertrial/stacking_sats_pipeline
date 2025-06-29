@@ -62,9 +62,7 @@ class TestPlottingFunctions:
 
         try:
             # Should not raise an exception
-            plot_features(
-                df, weights=weights, start_date="2020-01-01", end_date="2020-12-31"
-            )
+            plot_features(df, weights=weights, start_date="2020-01-01", end_date="2020-12-31")
 
             # Verify matplotlib functions were called
             mock_figure.assert_called()
@@ -160,9 +158,7 @@ class TestPlottingInputValidation:
 
         try:
             # Test each function with minimal data
-            plot_features(
-                df, weights=weights, start_date=df.index[0], end_date=df.index[-1]
-            )
+            plot_features(df, weights=weights, start_date=df.index[0], end_date=df.index[-1])
             plot_final_weights(weights, start_date=df.index[0])
 
         except Exception as e:
@@ -255,9 +251,7 @@ class TestPlottingUtilities:
         # Check plot_final_weights signature
         sig = inspect.signature(plot_final_weights)
         params = list(sig.parameters.keys())
-        assert len(params) >= 1, (
-            "plot_final_weights should accept at least one parameter"
-        )
+        assert len(params) >= 1, "plot_final_weights should accept at least one parameter"
 
 
 class TestPlottingIntegration:

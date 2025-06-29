@@ -6,12 +6,13 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Protocol
+from typing import Protocol
 
 import numpy as np
 import pandas as pd
 
 from .coinmetrics_loader import CoinMetricsLoader
+from .fear_gread_loader import FearGreedLoader
 from .fred_loader import FREDLoader
 
 # Logging configuration
@@ -26,9 +27,7 @@ logging.basicConfig(
 class DataLoader(Protocol):
     """Protocol for data loaders."""
 
-    def load(
-        self, use_memory: bool = True, path: str | Path | None = None
-    ) -> pd.DataFrame:
+    def load(self, use_memory: bool = True, path: str | Path | None = None) -> pd.DataFrame:
         """Load data from source."""
         ...
 
@@ -53,8 +52,9 @@ class MultiSourceDataLoader:
             self.data_dir = Path(data_dir)
 
         # Initialize available loaders
-        self.loaders: Dict[str, DataLoader] = {
-            "coinmetrics": CoinMetricsLoader(self.data_dir)
+        self.loaders: dict[str, DataLoader] = {
+            "coinmetrics": CoinMetricsLoader(self.data_dir),
+            "feargreed": FearGreedLoader(self.data_dir),
         }
 
         # Add FRED loader only if API key is available
@@ -65,7 +65,8 @@ class MultiSourceDataLoader:
         except ValueError as e:
             if "FRED API key is required" in str(e):
                 logging.warning(
-                    "FRED loader not available: No API key found. Set FRED_API_KEY environment variable to enable FRED data."
+                    "FRED loader not available: No API key found. Set FRED_API_KEY "
+                    "environment variable to enable FRED data."
                 )
             else:
                 logging.warning("FRED loader initialization failed: %s", e)
@@ -121,7 +122,7 @@ class MultiSourceDataLoader:
 
     def load_and_merge(
         self,
-        sources: List[str],
+        sources: list[str],
         use_memory: bool = True,
         merge_on: str = "time",
         how: str = "outer",
@@ -163,18 +164,14 @@ class MultiSourceDataLoader:
 
             # Merge on index if merge_on is 'time' or index name
             if merge_on == "time" or merge_on == merged_df.index.name:
-                merged_df = merged_df.merge(
-                    source_df, left_index=True, right_index=True, how=how
-                )
+                merged_df = merged_df.merge(source_df, left_index=True, right_index=True, how=how)
             else:
                 merged_df = merged_df.merge(source_df, on=merge_on, how=how)
 
-        logging.info(
-            "Merged data from sources: %s (shape: %s)", sources, merged_df.shape
-        )
+        logging.info("Merged data from sources: %s (shape: %s)", sources, merged_df.shape)
         return merged_df
 
-    def get_available_sources(self) -> List[str]:
+    def get_available_sources(self) -> list[str]:
         """
         Get list of available data sources.
 
@@ -220,7 +217,7 @@ def load_data(
 
 
 def load_and_merge_data(
-    sources: List[str],
+    sources: list[str],
     use_memory: bool = True,
     merge_on: str = "time",
     how: str = "outer",
@@ -246,14 +243,10 @@ def load_and_merge_data(
         Merged DataFrame with data from all specified sources.
     """
     loader = MultiSourceDataLoader()
-    return loader.load_and_merge(
-        sources, use_memory=use_memory, merge_on=merge_on, how=how
-    )
+    return loader.load_and_merge(sources, use_memory=use_memory, merge_on=merge_on, how=how)
 
 
-def validate_price_data(
-    df: pd.DataFrame, price_columns: Optional[List[str]] = None
-) -> None:
+def validate_price_data(df: pd.DataFrame, price_columns: list[str] | None = None) -> None:
     """
     Comprehensive validation of price data DataFrame.
 

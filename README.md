@@ -38,6 +38,45 @@ def my_strategy(df):
 
 > **Note**: Data is now loaded directly into memory from CoinMetrics (no CSV files needed). For legacy file-based loading, use `load_data(use_memory=False)`.
 
+### Data Extraction
+
+Extract all data sources to local files for offline analysis:
+
+#### CLI Usage
+```bash
+# Extract all data to CSV format
+stacking-sats --extract-data csv
+
+# Extract all data to Parquet format (smaller files, better compression)
+stacking-sats --extract-data parquet
+
+# Extract to specific directory
+stacking-sats --extract-data csv --output-dir data/
+stacking-sats --extract-data parquet -o exports/
+```
+
+#### Python API
+```python
+from stacking_sats_pipeline import extract_all_data
+
+# Extract all data to CSV in current directory
+extract_all_data("csv")
+
+# Extract all data to Parquet in specific directory
+extract_all_data("parquet", "data/exports/")
+```
+
+**What gets extracted:**
+- 📈 **Bitcoin Price Data** (CoinMetrics) → `btc_coinmetrics.csv/parquet`
+- 😨 **Fear & Greed Index** (Alternative.me) → `fear_greed.csv/parquet`  
+- 💵 **U.S. Dollar Index** (FRED) → `dxy_fred.csv/parquet`*
+
+*\*Requires `FRED_API_KEY` environment variable. Get a free key at [FRED API](https://fred.stlouisfed.org/docs/api/api_key.html)*
+
+**File Format Benefits:**
+- **CSV**: Human-readable, universally compatible
+- **Parquet**: ~50% smaller files, faster loading, preserves data types
+
 ### Interactive Tutorial
 
 ```bash
@@ -126,15 +165,43 @@ For development and testing:
 git clone https://github.com/hypertrial/stacking_sats_pipeline.git
 cd stacking_sats_pipeline
 
-# Install in development mode
+# Set up development environment (installs dependencies + pre-commit hooks)
+make setup-dev
+
+# OR manually:
 pip install -e ".[dev]"
+pre-commit install
 
 # Run tests
-pytest
+make test
+# OR: pytest
+
+# Code quality (MANDATORY - CI will fail if not clean)
+make lint          # Fix linting issues
+make format        # Format code
+make check         # Check without fixing (CI-style)
 
 # Run specific test categories
 pytest -m "not integration"  # Skip integration tests
 pytest -m integration        # Run only integration tests
+```
+
+### Code Quality Standards
+
+**⚠️ MANDATORY**: All code must pass ruff linting and formatting checks.
+
+- **Linting/Formatting**: We use [ruff](https://docs.astral.sh/ruff/) for both linting and code formatting
+- **Pre-commit hooks**: Automatically run on every commit to catch issues early
+- **CI enforcement**: Pull requests will fail if code doesn't meet standards
+
+**Quick commands:**
+```bash
+make help          # Show all available commands
+make lint          # Fix ALL issues (autopep8 + ruff + format)
+make autopep8      # Fix line length issues specifically  
+make format        # Format code with ruff only
+make format-all    # Comprehensive formatting (autopep8 + ruff)
+make check         # Check code quality (what CI runs)
 ```
 
 For detailed testing documentation, see [TESTS.md](tests/TESTS.md).
@@ -154,6 +221,10 @@ stacking-sats --strategy your_strategy.py --no-plot
 
 # Run simulation
 stacking-sats --strategy your_strategy.py --simulate --budget 1000000
+
+# Extract data
+stacking-sats --extract-data csv --output-dir data/
+stacking-sats --extract-data parquet -o exports/
 
 # Show help
 stacking-sats --help

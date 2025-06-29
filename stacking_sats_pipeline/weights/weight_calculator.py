@@ -6,7 +6,6 @@ allocation weights for historical periods using coinmetrics data.
 """
 
 import logging
-from typing import Optional
 
 import pandas as pd
 
@@ -42,7 +41,8 @@ def validate_date_range(btc_df: pd.DataFrame, start_date: str, end_date: str) ->
 
     if start_ts < data_start:
         raise ValueError(
-            f"Start date {start_date} is before available data starts ({data_start.strftime('%Y-%m-%d')})"
+            f"Start date {start_date} is before available data starts "
+            f"({data_start.strftime('%Y-%m-%d')})"
         )
 
     if end_ts > data_end:
@@ -50,9 +50,7 @@ def validate_date_range(btc_df: pd.DataFrame, start_date: str, end_date: str) ->
             f"End date {end_date} is after available data ends ({data_end.strftime('%Y-%m-%d')})"
         )
 
-    logger.info(
-        f"Date range {start_date} to {end_date} validated against available data"
-    )
+    logger.info(f"Date range {start_date} to {end_date} validated against available data")
 
 
 def get_historical_btc_data() -> pd.DataFrame:
@@ -60,7 +58,8 @@ def get_historical_btc_data() -> pd.DataFrame:
     logger.info("Loading historical BTC price data from coinmetrics...")
     btc_df = load_data()
     logger.info(
-        f"Loaded data from {btc_df.index.min().strftime('%Y-%m-%d')} to {btc_df.index.max().strftime('%Y-%m-%d')}"
+        f"Loaded data from {btc_df.index.min().strftime('%Y-%m-%d')} to "
+        f"{btc_df.index.max().strftime('%Y-%m-%d')}"
     )
     return btc_df
 
@@ -79,9 +78,7 @@ def compute_weights_for_period(btc_df: pd.DataFrame, end_date: str) -> pd.Series
         logger.info("Computing allocation weights...")
         return compute_weights(btc_df)
 
-    logger.info(
-        f"Extending computation beyond BACKTEST_END ({BACKTEST_END}) to {end_date}"
-    )
+    logger.info(f"Extending computation beyond BACKTEST_END ({BACKTEST_END}) to {end_date}")
 
     # Use strategy components with extended date range
     import numpy as np
@@ -97,9 +94,7 @@ def compute_weights_for_period(btc_df: pd.DataFrame, end_date: str) -> pd.Series
     weights = pd.Series(index=df_feat.index, dtype=float)
 
     start_year = pd.to_datetime(BACKTEST_START).year
-    cycle_labels = df_feat.index.to_series().apply(
-        lambda ts: (ts.year - start_year) // CYCLE_YEARS
-    )
+    cycle_labels = df_feat.index.to_series().apply(lambda ts: (ts.year - start_year) // CYCLE_YEARS)
 
     # Apply strategy logic per cycle
     for _, cycle_df in df_feat.groupby(cycle_labels):
@@ -160,7 +155,8 @@ def get_weights_for_period(start_date: str, end_date: str) -> pd.Series:
         end_ts = end_ts.tz_localize(weights.index.tz)
 
     logger.info(
-        f"Filtering weights for period: {start_ts.strftime('%Y-%m-%d')} to {end_ts.strftime('%Y-%m-%d')}"
+        f"Filtering weights for period: {start_ts.strftime('%Y-%m-%d')} to "
+        f"{end_ts.strftime('%Y-%m-%d')}"
     )
 
     period_weights = weights.loc[start_ts:end_ts]
@@ -183,18 +179,14 @@ def display_weights(budget: float, start_date: str, end_date: str):
 
     print("\nDaily Breakdown:")
     print("-" * 80)
-    print(
-        f"{'Date':<12} {'Weight %':<10} {'USD Amount':<12} {'BTC Price':<12} {'BTC Amount':<12}"
-    )
+    print(f"{'Date':<12} {'Weight %':<10} {'USD Amount':<12} {'BTC Price':<12} {'BTC Amount':<12}")
     print("-" * 80)
 
     total_btc = 0
     total_period_weight = weights.sum()
 
     for date, weight in weights.items():
-        weight_pct = (
-            (weight / total_period_weight * 100) if total_period_weight > 0 else 0
-        )
+        weight_pct = (weight / total_period_weight * 100) if total_period_weight > 0 else 0
         daily_usd = budget * weight
 
         # Get BTC price for this date if available
@@ -217,7 +209,7 @@ def display_weights(budget: float, start_date: str, end_date: str):
 
 
 def save_weights_to_csv(
-    budget: float, start_date: str, end_date: str, filename: Optional[str] = None
+    budget: float, start_date: str, end_date: str, filename: str | None = None
 ) -> str:
     """Save weights and allocations to CSV file."""
     if filename is None:
@@ -230,7 +222,7 @@ def save_weights_to_csv(
 
 
 def save_weights_to_parquet(
-    budget: float, start_date: str, end_date: str, filename: Optional[str] = None
+    budget: float, start_date: str, end_date: str, filename: str | None = None
 ) -> str:
     """Save weights and allocations to Parquet file."""
     if filename is None:
@@ -246,7 +238,7 @@ def save_weights(
     budget: float,
     start_date: str,
     end_date: str,
-    filename: Optional[str] = None,
+    filename: str | None = None,
     file_format: str = "csv",
 ) -> str:
     """Save weights and allocations to file in specified format."""
@@ -256,9 +248,7 @@ def save_weights(
         return save_weights_to_csv(budget, start_date, end_date, filename)
 
 
-def _create_weights_dataframe(
-    budget: float, start_date: str, end_date: str
-) -> pd.DataFrame:
+def _create_weights_dataframe(budget: float, start_date: str, end_date: str) -> pd.DataFrame:
     """Create a DataFrame with weights, allocations, and prices for export."""
     weights = get_weights_for_period(start_date, end_date)
     btc_df = get_historical_data_for_period(start_date, end_date)
@@ -306,14 +296,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Calculate Bitcoin allocation weights for a specific period and budget"
     )
-    parser.add_argument(
-        "budget", type=float, help="Total USD budget to allocate across the period"
-    )
+    parser.add_argument("budget", type=float, help="Total USD budget to allocate across the period")
     parser.add_argument("start_date", type=str, help="Start date in YYYY-MM-DD format")
     parser.add_argument("end_date", type=str, help="End date in YYYY-MM-DD format")
-    parser.add_argument(
-        "--save", "-s", action="store_true", help="Save weights to CSV file"
-    )
+    parser.add_argument("--save", "-s", action="store_true", help="Save weights to CSV file")
     parser.add_argument("--filename", "-f", type=str, help="CSV filename (optional)")
 
     args = parser.parse_args()

@@ -64,9 +64,7 @@ class CoinMetricsLoader:
             # Remove duplicates and sort
             btc_df = btc_df.loc[~btc_df.index.duplicated(keep="last")].sort_index()
 
-            logging.info(
-                "Loaded CoinMetrics BTC data into memory (%d rows)", len(btc_df)
-            )
+            logging.info("Loaded CoinMetrics BTC data into memory (%d rows)", len(btc_df))
             self._validate_data(btc_df)
 
             return btc_df
@@ -108,7 +106,8 @@ class CoinMetricsLoader:
         Parameters
         ----------
         local_path : str or Path, optional
-            Destination Parquet path. If None, defaults to DEFAULT_FILENAME with .parquet extension in data_dir.
+            Destination Parquet path. If None, defaults to DEFAULT_FILENAME with
+            .parquet extension in data_dir.
 
         Returns
         -------
@@ -172,7 +171,8 @@ class CoinMetricsLoader:
         Parameters
         ----------
         path : str or Path, optional
-            Path to the Parquet file. If None, defaults to DEFAULT_FILENAME with .parquet extension in data_dir.
+            Path to the Parquet file. If None, defaults to DEFAULT_FILENAME with
+            .parquet extension in data_dir.
 
         Returns
         -------
@@ -240,9 +240,7 @@ class CoinMetricsLoader:
         Basic sanity‑check on the CoinMetrics dataframe.
         """
         if df.empty or "PriceUSD" not in df.columns:
-            raise ValueError(
-                "Invalid CoinMetrics BTC data – 'PriceUSD' column missing."
-            )
+            raise ValueError("Invalid CoinMetrics BTC data – 'PriceUSD' column missing.")
         if not isinstance(df.index, pd.DatetimeIndex):
             raise ValueError("Index must be DatetimeIndex.")
         if df.index.tz is None:

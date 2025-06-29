@@ -13,6 +13,7 @@ The test suite is built using pytest and covers all major components of the pipe
 
 - **Backtesting functionality** (`test_backtest.py`)
 - **Data loading and validation** (`test_data.py`) 
+- **Data extraction and export** (`test_data_extraction.py`)
 - **End-to-end data pipeline including Parquet support** (`test_data_pipeline_e2e.py`)
 - **Command-line interface** (`test_cli.py`)
 - **Configuration and metadata** (`test_config.py`)
@@ -74,14 +75,105 @@ pytest -m integration
 |------|---------|--------------|
 | `test_backtest.py` | Backtesting functionality | Strategy validation, performance metrics, result analysis |
 | `test_data.py` | Data loading and validation | CoinMetrics integration, CSV handling, data validation |
+| `test_data_extraction.py` | Data extraction and export | Multi-format export (CSV/Parquet), CLI integration, file validation |
 | `test_data_pipeline_e2e.py` | End-to-end data pipeline | Real API testing, Parquet support, file format conversion, data quality validation |
-| `test_cli.py` | Command-line interface | Argument parsing, strategy loading, error handling |
+| `test_cli.py` | Command-line interface | Argument parsing, strategy loading, error handling, data extraction commands |
 | `test_config.py` | Configuration and metadata | Package metadata, constants validation |
 | `test_plot.py` | Plotting and visualization | Chart generation, matplotlib integration |
 | `test_strategy.py` | Strategy computation | Weight calculation, feature construction |
 | `test_weight_calculator.py` | Weight calculator functionality | Historical data constraints, date validation, CSV export |
 
 ## Detailed Test Documentation
+
+### Data Extraction Tests (`test_data_extraction.py`)
+
+#### TestDataExtractionPythonAPI
+Tests the `extract_all_data()` Python API functionality:
+
+- **CSV Integration Test**: `test_extract_all_data_csv_integration()`
+  - Tests extracting all data sources to CSV format
+  - Validates file creation and data integrity
+  - Checks for Bitcoin, Fear & Greed, and FRED data files
+  - Verifies file content and structure
+
+- **Parquet Integration Test**: `test_extract_all_data_parquet_integration()`
+  - Tests extracting all data sources to Parquet format
+  - Validates compression efficiency and data preservation
+  - Ensures proper datetime indexing is maintained
+
+- **Default Directory Handling**: `test_extract_all_data_default_directory()`
+  - Tests extraction to current working directory when no path specified
+  - Validates proper Path object handling
+
+- **FRED API Key Handling**: `test_extract_all_data_no_fred_api_key()`
+  - Tests graceful handling when FRED API key is missing
+  - Ensures Bitcoin and Fear & Greed data still extracted
+  - Validates appropriate warning messages
+
+- **Error Handling**: `test_extract_all_data_error_handling()`
+  - Tests resilience when individual data sources fail
+  - Ensures partial extraction continues even with failures
+  - Validates error logging and reporting
+
+- **File Size Comparison**: `test_extract_all_data_file_size_comparison()`
+  - Compares CSV vs Parquet file sizes
+  - Validates compression efficiency (typically 40-60% reduction)
+  - Tests storage optimization benefits
+
+- **Data Integrity Validation**: `test_extract_all_data_data_integrity()`
+  - Validates extracted data maintains original quality
+  - Tests price ranges and data type preservation
+  - Ensures timezone consistency across formats
+
+#### TestDataExtractionUtilities
+Tests utility functions and edge cases:
+
+- **Function Availability**: Tests that `extract_all_data` is properly exported
+- **Function Signature**: Validates parameter structure and types
+- **Path Handling**: Tests string vs Path object handling
+- **Format Validation**: Tests invalid format handling (defaults to CSV)
+
+### CLI Data Extraction Tests (`test_cli.py`)
+
+#### TestCLIDataExtraction
+Tests command-line interface for data extraction:
+
+- **CSV Extraction**: `test_cli_extract_data_csv()`
+  - Tests `stacking-sats --extract-data csv`
+  - Validates proper function calling with correct parameters
+
+- **Parquet Extraction**: `test_cli_extract_data_parquet()`
+  - Tests `stacking-sats --extract-data parquet`
+  - Ensures format parameter is passed correctly
+
+- **Output Directory Options**: 
+  - `test_cli_extract_data_with_output_dir()`: Tests `--output-dir` flag
+  - `test_cli_extract_data_short_output_dir()`: Tests `-o` short form
+
+- **Workflow Isolation**: `test_cli_extract_data_skips_backtesting()`
+  - Ensures data extraction mode exits without running backtesting
+  - Validates clean separation of concerns
+
+- **Integration Testing**: `test_cli_extract_data_integration()`
+  - End-to-end test of CLI data extraction with real commands
+  - Validates file creation and content in temporary directory
+  - Tests timeout handling and error reporting
+
+- **Help Documentation**: `test_cli_extract_data_help_includes_new_options()`
+  - Ensures new CLI options are documented in help text
+  - Validates format choices are clearly explained
+
+- **Error Handling**: `test_cli_extract_data_invalid_format()`
+  - Tests rejection of invalid formats
+  - Ensures clear error messages with valid options
+
+#### TestCLIArguments (Enhanced)
+Extended to include data extraction argument parsing:
+
+- **Data Extraction Arguments**: `test_data_extraction_argument_parsing()`
+  - Tests `--extract-data {csv,parquet}` choices validation
+  - Tests `--output-dir` and `-o` parameter handling
+  - Validates argument combinations and defaults
 
 ### Backtesting Tests (`test_backtest.py`)
 
@@ -187,6 +279,7 @@ Tests argument parsing:
 
 - **No-Plot Argument**: `test_no_plot_argument_parsing()`
 - **Strategy Argument**: `test_argument_parsing_strategy()`
+- **Data Extraction Arguments**: `test_data_extraction_argument_parsing()`
 - Tests default values and custom argument handling
 
 #### TestCLIStrategyLoading
@@ -589,6 +682,9 @@ pytest tests/test_backtest.py
 # Data loading
 pytest tests/test_data.py
 
+# Data extraction and export
+pytest tests/test_data_extraction.py
+
 # End-to-end data pipeline (includes Parquet tests)
 pytest tests/test_data_pipeline_e2e.py
 
@@ -672,6 +768,11 @@ The test suite is designed to work in CI environments:
    - Check that strategy functions return proper pandas Series
    - Ensure weights sum to 1.0 and are non-negative
 
+4. **Data Extraction Test Failures**
+   - May indicate network connectivity or API issues
+   - Check FRED_API_KEY environment variable for FRED tests
+   - Verify file permissions for output directory tests
+
 ### Test Development
 
 When adding new tests:
@@ -681,6 +782,8 @@ When adding new tests:
 3. **Mock External Dependencies**: Use `unittest.mock` for external services
 4. **Create Synthetic Data**: Use reproducible random seeds
 5. **Test Edge Cases**: Include tests for boundary conditions and error scenarios
+6. **Test Both Formats**: For data extraction, test both CSV and Parquet formats
+7. **Validate File Creation**: Ensure tests clean up temporary files
 
 ## Test Coverage
 
@@ -688,6 +791,8 @@ The test suite aims for comprehensive coverage of:
 
 - ✅ Core backtesting functionality
 - ✅ Data loading and validation
+- ✅ Data extraction and export (CSV/Parquet)
+- ✅ Command-line interface including data extraction commands
 - ✅ End-to-end data pipeline with real API integration
 - ✅ Parquet file format support throughout the pipeline
 - ✅ CLI argument parsing and execution
@@ -698,6 +803,7 @@ The test suite aims for comprehensive coverage of:
 - ✅ Error handling and edge cases
 - ✅ File format conversion and efficiency
 - ✅ Data type preservation and schema validation
+- ✅ Multi-format data export functionality
 
 Run coverage analysis:
 ```bash

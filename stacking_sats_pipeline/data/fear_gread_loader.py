@@ -5,14 +5,12 @@ Fear & Greed Index loader https://alternative.me/crypto/api/
 from __future__ import annotations
 
 import logging
-import os
+from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
-import requests
 import pytz
-from datetime import datetime
+import requests
 
 # Load environment variables if available
 try:
@@ -38,9 +36,7 @@ class FearGreedLoader:
     BASE_URL = "https://api.alternative.me/fng/"
     DEFAULT_FILENAME = "fear_greed.csv"
 
-    def __init__(
-        self, data_dir: str | Path | None = None
-    ):
+    def __init__(self, data_dir: str | Path | None = None):
         """
         Initialize Fear & Greed Index loader.
 
@@ -94,12 +90,14 @@ class FearGreedLoader:
                 if value and timestamp:
                     # Convert timestamp to datetime (timestamp is in seconds)
                     dt = datetime.fromtimestamp(int(timestamp), tz=pytz.UTC)
-                    
-                    df_data.append({
-                        "date": dt,
-                        "fear_greed_value": int(value),
-                        "value_classification": value_classification
-                    })
+
+                    df_data.append(
+                        {
+                            "date": dt,
+                            "fear_greed_value": int(value),
+                            "value_classification": value_classification,
+                        }
+                    )
 
             if not df_data:
                 raise ValueError("No valid data points found in Fear & Greed Index response")
@@ -109,10 +107,13 @@ class FearGreedLoader:
             fear_greed_df.index.name = "time"
 
             # Remove duplicates and sort
-            fear_greed_df = fear_greed_df.loc[~fear_greed_df.index.duplicated(keep="last")].sort_index()
+            fear_greed_df = fear_greed_df.loc[
+                ~fear_greed_df.index.duplicated(keep="last")
+            ].sort_index()
 
             logging.info(
-                "Loaded Fear & Greed Index data into memory (%d rows)", len(fear_greed_df)
+                "Loaded Fear & Greed Index data into memory (%d rows)",
+                len(fear_greed_df),
             )
             self._validate_data(fear_greed_df)
 
@@ -158,7 +159,8 @@ class FearGreedLoader:
         Parameters
         ----------
         local_path : str or Path, optional
-            Destination Parquet path. If None, defaults to DEFAULT_FILENAME with .parquet extension in data_dir.
+            Destination Parquet path. If None, defaults to DEFAULT_FILENAME with
+            .parquet extension in data_dir.
 
         Returns
         -------
@@ -207,11 +209,11 @@ class FearGreedLoader:
 
         df = pd.read_csv(path, index_col=0, parse_dates=True, low_memory=False)
         df = df.loc[~df.index.duplicated(keep="last")].sort_index()
-        
+
         # Convert naive datetime index to UTC timezone-aware
         if df.index.tz is None:
             df.index = df.index.tz_localize("UTC")
-        
+
         self._validate_data(df)
         return df
 
@@ -222,7 +224,8 @@ class FearGreedLoader:
         Parameters
         ----------
         path : str or Path, optional
-            Path to the Parquet file. If None, defaults to DEFAULT_FILENAME with .parquet extension in data_dir.
+            Path to the Parquet file. If None, defaults to DEFAULT_FILENAME with
+            .parquet extension in data_dir.
 
         Returns
         -------
@@ -285,9 +288,7 @@ class FearGreedLoader:
         Basic sanity‑check on the Fear & Greed Index dataframe.
         """
         if df.empty or "fear_greed_value" not in df.columns:
-            raise ValueError(
-                "Invalid Fear & Greed Index data – 'fear_greed_value' column missing."
-            )
+            raise ValueError("Invalid Fear & Greed Index data – 'fear_greed_value' column missing.")
         if not isinstance(df.index, pd.DatetimeIndex):
             raise ValueError("Index must be DatetimeIndex.")
         if df.index.tz is None:
@@ -304,17 +305,13 @@ def load_fear_greed_data_from_web() -> pd.DataFrame:
     return loader.load_from_web()
 
 
-def extract_fear_greed_data_to_csv(
-    local_path: str | Path | None = None
-) -> None:
+def extract_fear_greed_data_to_csv(local_path: str | Path | None = None) -> None:
     """Extract Fear & Greed Index data to CSV (backward compatibility)."""
     loader = FearGreedLoader()
     loader.extract_to_csv(local_path)
 
 
-def extract_fear_greed_data_to_parquet(
-    local_path: str | Path | None = None
-) -> None:
+def extract_fear_greed_data_to_parquet(local_path: str | Path | None = None) -> None:
     """Extract Fear & Greed Index data to Parquet (backward compatibility)."""
     loader = FearGreedLoader()
     loader.extract_to_parquet(local_path)
