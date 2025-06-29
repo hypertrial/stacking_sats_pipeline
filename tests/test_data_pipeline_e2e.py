@@ -129,8 +129,7 @@ class TestDataPipelineEndToEnd:
 
             # Find overlap period - be more flexible about overlap requirements
             both_available = (
-                merged_df["PriceUSD_coinmetrics"].notna()
-                & merged_df["DXY_Value_fred"].notna()
+                merged_df["PriceUSD_coinmetrics"].notna() & merged_df["DXY_Value_fred"].notna()
             )
             overlap_count = both_available.sum()
 
@@ -156,9 +155,7 @@ class TestDataPipelineEndToEnd:
                     )
             else:
                 # We have overlap - proceed with original validation
-                print(
-                    f"✓ Merged data: {len(merged_df)} total records, {overlap_count} overlapping"
-                )
+                print(f"✓ Merged data: {len(merged_df)} total records, {overlap_count} overlapping")
 
         except Exception as e:
             pytest.skip(f"Skipping multi-source test due to API issue: {e}")
@@ -184,9 +181,7 @@ class TestDataPipelineEndToEnd:
             sample_data.loc[dates[5], "PriceUSD"] = np.nan  # Missing value
             sample_data.loc[dates[10], "PriceUSD"] = -1000  # Negative price
             if "VolumeTrustlessUSD" in sample_data.columns:
-                sample_data.loc[dates[20], "VolumeTrustlessUSD"] = (
-                    np.inf
-                )  # Infinite value
+                sample_data.loc[dates[20], "VolumeTrustlessUSD"] = np.inf  # Infinite value
 
             # Test validation catches issues
             with pytest.raises(ValueError):
@@ -268,9 +263,7 @@ class TestDataPipelineEndToEnd:
 
             # Validate performance expectations
             loading_time = end_time - start_time
-            assert loading_time < 30.0, (
-                f"Data loading took too long: {loading_time:.2f}s"
-            )
+            assert loading_time < 30.0, f"Data loading took too long: {loading_time:.2f}s"
 
             # Validate data size
             assert len(df) > 1000, "Should have substantial historical data"
@@ -296,9 +289,7 @@ class TestDataPipelineEndToEnd:
             # Filter to recent 30-day period
             end_date = df_full.index.max()
             start_date = end_date - timedelta(days=30)
-            df_filtered = df_full[
-                (df_full.index >= start_date) & (df_full.index <= end_date)
-            ]
+            df_filtered = df_full[(df_full.index >= start_date) & (df_full.index <= end_date)]
 
             # Validate filtering
             assert len(df_filtered) <= 31, "Should have at most 31 days"
@@ -338,9 +329,7 @@ class TestDataPipelineEndToEnd:
             assert isinstance(df, pd.DataFrame)
             assert len(df) > 100
 
-            print(
-                f"✓ Missing API key handling: {len(available_sources)} sources available"
-            )
+            print(f"✓ Missing API key handling: {len(available_sources)} sources available")
 
         except Exception as e:
             pytest.skip(f"Skipping missing API key test due to issue: {e}")
@@ -366,9 +355,7 @@ class TestDataPipelineEndToEnd:
                 assert "DXY_Value" in df_fred.columns
 
                 # Test merging real data
-                merged_df = load_and_merge_data(
-                    ["coinmetrics", "fred"], use_memory=True
-                )
+                merged_df = load_and_merge_data(["coinmetrics", "fred"], use_memory=True)
                 assert isinstance(merged_df, pd.DataFrame)
                 assert len(merged_df) > 100
 
@@ -377,9 +364,7 @@ class TestDataPipelineEndToEnd:
                     f"Merged({len(merged_df)})"
                 )
             else:
-                print(
-                    f"✓ Partial integration: CoinMetrics({len(df_cm)}) only (no FRED API key)"
-                )
+                print(f"✓ Partial integration: CoinMetrics({len(df_cm)}) only (no FRED API key)")
 
         except Exception as e:
             pytest.skip(f"Skipping real data integration test: {e}")
@@ -404,9 +389,7 @@ class TestDataPipelineEndToEnd:
             if os.getenv("FRED_API_KEY"):
                 df_fred = load_data("fred", use_memory=True)
 
-                assert df_fred.index.tz is not None, (
-                    "FRED DataFrame index should be timezone-aware"
-                )
+                assert df_fred.index.tz is not None, "FRED DataFrame index should be timezone-aware"
                 assert str(df_fred.index.tz) == "UTC", (
                     f"Expected UTC timezone for FRED, got {df_fred.index.tz}"
                 )
@@ -414,9 +397,7 @@ class TestDataPipelineEndToEnd:
                 print(f"✓ FRED timezone: {df_fred.index.tz}")
 
                 # Test merged data has UTC timezone
-                merged_df = load_and_merge_data(
-                    ["coinmetrics", "fred"], use_memory=True
-                )
+                merged_df = load_and_merge_data(["coinmetrics", "fred"], use_memory=True)
 
                 assert merged_df.index.tz is not None, (
                     "Merged DataFrame index should be timezone-aware"
@@ -446,18 +427,10 @@ class TestDataPipelineEndToEnd:
             for source_name, df in [("CoinMetrics", df_coinmetrics), ("FRED", df_fred)]:
                 sample_timestamps = df.index[:5]  # Check first 5 timestamps
                 for ts in sample_timestamps:
-                    assert ts.hour == 0, (
-                        f"{source_name} timestamp should be at midnight: {ts}"
-                    )
-                    assert ts.minute == 0, (
-                        f"{source_name} timestamp minute should be 0: {ts}"
-                    )
-                    assert ts.second == 0, (
-                        f"{source_name} timestamp second should be 0: {ts}"
-                    )
-                    assert str(ts.tz) == "UTC", (
-                        f"{source_name} should use UTC timezone: {ts.tz}"
-                    )
+                    assert ts.hour == 0, f"{source_name} timestamp should be at midnight: {ts}"
+                    assert ts.minute == 0, f"{source_name} timestamp minute should be 0: {ts}"
+                    assert ts.second == 0, f"{source_name} timestamp second should be 0: {ts}"
+                    assert str(ts.tz) == "UTC", f"{source_name} should use UTC timezone: {ts.tz}"
 
             # Test merged data has overlapping records (the original problem)
             merged_df = load_and_merge_data(["coinmetrics", "fred"], use_memory=True)
@@ -473,21 +446,21 @@ class TestDataPipelineEndToEnd:
             both_available = merged_df[price_col].notna() & merged_df[dxy_col].notna()
             overlap_count = both_available.sum()
 
-            # This was the original bug - 0 overlapping records due to timestamp misalignment
+            # This was the original bug - 0 overlapping records due to timestamp
+            # misalignment
             assert overlap_count > 0, (
                 f"Timestamp alignment fix failed - still have 0 overlapping records. "
                 f"BTC records: {merged_df[price_col].notna().sum()}, "
                 f"DXY records: {merged_df[dxy_col].notna().sum()}"
             )
 
-            # Verify the overlap is substantial (should be hundreds or thousands of days)
+            # Verify the overlap is substantial (should be hundreds or thousands of
+            # days)
             assert overlap_count > 100, (
                 f"Expected substantial overlap, got only {overlap_count} overlapping records"
             )
 
-            print(
-                f"✓ Timestamp alignment fix verified: {overlap_count} overlapping records"
-            )
+            print(f"✓ Timestamp alignment fix verified: {overlap_count} overlapping records")
             print(f"✓ Total BTC records: {merged_df[price_col].notna().sum()}")
             print(f"✓ Total DXY records: {merged_df[dxy_col].notna().sum()}")
 
@@ -534,9 +507,7 @@ class TestDataQualityValidation:
             real_df = load_data("coinmetrics", use_memory=True)
 
             # Create clean sample from real data instead of validating raw data
-            valid_price_data = real_df[
-                real_df["PriceUSD"].notna() & (real_df["PriceUSD"] > 0)
-            ]
+            valid_price_data = real_df[real_df["PriceUSD"].notna() & (real_df["PriceUSD"] > 0)]
             if len(valid_price_data) < 100:
                 pytest.skip("Not enough valid price data for validation test")
 
@@ -600,12 +571,8 @@ class TestDataQualityValidation:
             if "Price" in col:
                 price_data = df[col].dropna()
                 if len(price_data) > 0:
-                    assert (price_data > 0).all(), (
-                        f"All prices in {col} should be positive"
-                    )
-                    assert (price_data < 1_000_000).all(), (
-                        f"Prices in {col} seem unrealistic"
-                    )
+                    assert (price_data > 0).all(), f"All prices in {col} should be positive"
+                    assert (price_data < 1_000_000).all(), f"Prices in {col} seem unrealistic"
             elif "DXY" in col:
                 dxy_data = df[col].dropna()
                 if len(dxy_data) > 0:
@@ -640,13 +607,9 @@ class TestDataPipelineMemoryManagement:
 
             # Validate memory usage is reasonable for the data size
             bytes_per_record = memory_increase / len(df) if len(df) > 0 else 0
-            assert bytes_per_record < 10000, (
-                f"Memory per record too high: {bytes_per_record} bytes"
-            )
+            assert bytes_per_record < 10000, f"Memory per record too high: {bytes_per_record} bytes"
 
-            print(
-                f"✓ Memory efficiency: {len(df)} records, {memory_increase:,} bytes increase"
-            )
+            print(f"✓ Memory efficiency: {len(df)} records, {memory_increase:,} bytes increase")
 
             # Clean up
             del df
@@ -671,9 +634,7 @@ class TestParquetDataPipeline:
                 # Extract to Parquet
                 parquet_path = loader.extract_to_parquet()
                 assert parquet_path.exists(), "Parquet file should be created"
-                assert parquet_path.suffix == ".parquet", (
-                    "File should have .parquet extension"
-                )
+                assert parquet_path.suffix == ".parquet", "File should have .parquet extension"
 
                 # Load from Parquet
                 df_parquet = loader.load_from_parquet()
@@ -687,9 +648,7 @@ class TestParquetDataPipeline:
                     "Parquet and web data should have same length"
                 )
                 assert "PriceUSD" in df_parquet.columns, "Should have PriceUSD column"
-                assert isinstance(df_parquet.index, pd.DatetimeIndex), (
-                    "Should have DatetimeIndex"
-                )
+                assert isinstance(df_parquet.index, pd.DatetimeIndex), "Should have DatetimeIndex"
 
                 # Compare data content (allowing for minor precision differences)
                 for col in ["PriceUSD"]:  # Test key column
@@ -698,22 +657,16 @@ class TestParquetDataPipeline:
                         parquet_data = df_parquet[col].dropna()
                         if len(web_data) > 0 and len(parquet_data) > 0:
                             # Check that most values are very close
-                            common_dates = web_data.index.intersection(
-                                parquet_data.index
-                            )
+                            common_dates = web_data.index.intersection(parquet_data.index)
                             if len(common_dates) > 0:
                                 web_subset = web_data.loc[common_dates]
                                 parquet_subset = parquet_data.loc[common_dates]
-                                close_matches = np.isclose(
-                                    web_subset, parquet_subset, rtol=1e-10
+                                close_matches = np.isclose(web_subset, parquet_subset, rtol=1e-10)
+                                assert close_matches.sum() / len(close_matches) > 0.99, (
+                                    f"Parquet and web data should match for {col}"
                                 )
-                                assert (
-                                    close_matches.sum() / len(close_matches) > 0.99
-                                ), f"Parquet and web data should match for {col}"
 
-                print(
-                    f"✓ CoinMetrics Parquet: {len(df_parquet)} records extracted and loaded"
-                )
+                print(f"✓ CoinMetrics Parquet: {len(df_parquet)} records extracted and loaded")
 
             except Exception as e:
                 pytest.skip(f"Skipping CoinMetrics Parquet test due to API issue: {e}")
@@ -732,9 +685,7 @@ class TestParquetDataPipeline:
                 # Extract to Parquet
                 parquet_path = loader.extract_to_parquet()
                 assert parquet_path.exists(), "Parquet file should be created"
-                assert parquet_path.suffix == ".parquet", (
-                    "File should have .parquet extension"
-                )
+                assert parquet_path.suffix == ".parquet", "File should have .parquet extension"
 
                 # Load from Parquet
                 df_parquet = loader.load_from_parquet()
@@ -748,9 +699,7 @@ class TestParquetDataPipeline:
                     "Parquet and web data should have same length"
                 )
                 assert "DXY_Value" in df_parquet.columns, "Should have DXY_Value column"
-                assert isinstance(df_parquet.index, pd.DatetimeIndex), (
-                    "Should have DatetimeIndex"
-                )
+                assert isinstance(df_parquet.index, pd.DatetimeIndex), "Should have DatetimeIndex"
 
                 # Compare data content
                 pd.testing.assert_frame_equal(
@@ -782,9 +731,7 @@ class TestParquetDataPipeline:
                 assert "PriceUSD" in df_parquet.columns
 
                 # Check that a .parquet file was created
-                parquet_files = [
-                    f for f in os.listdir(temp_dir) if f.endswith(".parquet")
-                ]
+                parquet_files = [f for f in os.listdir(temp_dir) if f.endswith(".parquet")]
                 assert len(parquet_files) > 0, "Should create Parquet file"
 
                 print(f"✓ Multi-source loader Parquet: {len(df_parquet)} records")
@@ -929,9 +876,7 @@ class TestBacktestParquetExport:
             # Create a simple strategy for testing
             def simple_strategy(data):
                 """Simple strategy that returns equal weights."""
-                return pd.Series(
-                    1.0 / len(data), index=data.index[-100:]
-                )  # Last 100 days
+                return pd.Series(1.0 / len(data), index=data.index[-100:])  # Last 100 days
 
             # Create BacktestResults object
             results = {"spd_table": pd.DataFrame({"test": [1, 2, 3]})}
@@ -940,9 +885,7 @@ class TestBacktestParquetExport:
             with tempfile.TemporaryDirectory() as temp_dir:
                 # Test save_weights_to_parquet
                 parquet_file = os.path.join(temp_dir, "test_weights.parquet")
-                saved_path = backtest_results.save_weights_to_parquet(
-                    parquet_file, budget=10000
-                )
+                saved_path = backtest_results.save_weights_to_parquet(parquet_file, budget=10000)
 
                 assert os.path.exists(saved_path), "Parquet file should be created"
                 assert saved_path.endswith(".parquet"), "Should have .parquet extension"
@@ -951,24 +894,16 @@ class TestBacktestParquetExport:
                 df_loaded = pd.read_parquet(saved_path)
                 assert isinstance(df_loaded, pd.DataFrame)
                 assert "weight" in df_loaded.columns, "Should have weight column"
-                assert "weight_percent" in df_loaded.columns, (
-                    "Should have weight_percent column"
-                )
-                assert "usd_allocation" in df_loaded.columns, (
-                    "Should have usd_allocation column"
-                )
-                assert isinstance(df_loaded.index, pd.DatetimeIndex), (
-                    "Should have DatetimeIndex"
-                )
+                assert "weight_percent" in df_loaded.columns, "Should have weight_percent column"
+                assert "usd_allocation" in df_loaded.columns, "Should have usd_allocation column"
+                assert isinstance(df_loaded.index, pd.DatetimeIndex), "Should have DatetimeIndex"
 
                 # Test save_weights with format parameter
                 parquet_file2 = os.path.join(temp_dir, "test_weights2.parquet")
                 saved_path2 = backtest_results.save_weights(
                     parquet_file2, budget=10000, file_format="parquet"
                 )
-                assert os.path.exists(saved_path2), (
-                    "Second Parquet file should be created"
-                )
+                assert os.path.exists(saved_path2), "Second Parquet file should be created"
 
                 # Test CSV vs Parquet comparison
                 csv_file = os.path.join(temp_dir, "test_weights.csv")
@@ -979,9 +914,7 @@ class TestBacktestParquetExport:
                 df_parquet = pd.read_parquet(saved_path)
 
                 # Data should be essentially the same
-                assert len(df_csv) == len(df_parquet), (
-                    "CSV and Parquet should have same length"
-                )
+                assert len(df_csv) == len(df_parquet), "CSV and Parquet should have same length"
                 pd.testing.assert_frame_equal(
                     df_csv.sort_index(),
                     df_parquet.sort_index(),
@@ -1012,9 +945,7 @@ class TestBacktestParquetExport:
 
                 # Test save_weights_to_parquet
                 parquet_file = os.path.join(temp_dir, "weights_test.parquet")
-                saved_path = save_weights_to_parquet(
-                    budget, start_date, end_date, parquet_file
-                )
+                saved_path = save_weights_to_parquet(budget, start_date, end_date, parquet_file)
 
                 assert os.path.exists(saved_path), "Parquet file should be created"
                 assert saved_path.endswith(".parquet"), "Should have .parquet extension"
@@ -1023,25 +954,17 @@ class TestBacktestParquetExport:
                 df_loaded = pd.read_parquet(saved_path)
                 assert isinstance(df_loaded, pd.DataFrame)
                 assert "weight" in df_loaded.columns, "Should have weight column"
-                assert "usd_allocation" in df_loaded.columns, (
-                    "Should have usd_allocation column"
-                )
-                assert isinstance(df_loaded.index, pd.DatetimeIndex), (
-                    "Should have DatetimeIndex"
-                )
+                assert "usd_allocation" in df_loaded.columns, "Should have usd_allocation column"
+                assert isinstance(df_loaded.index, pd.DatetimeIndex), "Should have DatetimeIndex"
 
                 # Test save_weights with format parameter
                 parquet_file2 = os.path.join(temp_dir, "weights_test2.parquet")
                 saved_path2 = save_weights(
                     budget, start_date, end_date, parquet_file2, file_format="parquet"
                 )
-                assert os.path.exists(saved_path2), (
-                    "Second Parquet file should be created"
-                )
+                assert os.path.exists(saved_path2), "Second Parquet file should be created"
 
-                print(
-                    f"✓ Weight calculator Parquet export: {len(df_loaded)} weight records"
-                )
+                print(f"✓ Weight calculator Parquet export: {len(df_loaded)} weight records")
 
         except Exception as e:
             pytest.skip(f"Skipping weight calculator Parquet test due to issue: {e}")

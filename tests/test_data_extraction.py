@@ -396,7 +396,8 @@ class TestDataExtractionPythonAPI:
                     assert ts.hour == 0, f"Timestamp should be at midnight: {ts}"
                     assert ts.minute == 0, f"Timestamp minute should be 0: {ts}"
                     assert ts.second == 0, f"Timestamp second should be 0: {ts}"
-                    # Note: CSV loading may not preserve timezone info, but normalization should still work
+                    # Note: CSV loading may not preserve timezone info, but
+                    # normalization should still work
 
                 # Check for overlapping data between sources
                 coinmetrics_cols = [
@@ -432,13 +433,14 @@ class TestDataExtractionPythonAPI:
                         btc_col = coinmetrics_cols[0]
                         dxy_col = fred_cols[0]
 
-                        # Count overlapping records (this was the original bug - 0 overlaps)
+                        # Count overlapping records (this was the original bug - 0
+                        # overlaps)
                         both_available = df[btc_col].notna() & df[dxy_col].notna()
                         overlap_count = both_available.sum()
 
                         assert overlap_count > 0, (
-                            f"Timestamp alignment fix failed - BTC & DXY overlap is {overlap_count}. "
-                            f"BTC records: {df[btc_col].notna().sum()}, "
+                            f"Timestamp alignment fix failed - BTC & DXY overlap is "
+                            f"{overlap_count}. BTC records: {df[btc_col].notna().sum()}, "
                             f"DXY records: {df[dxy_col].notna().sum()}"
                         )
 
@@ -448,7 +450,8 @@ class TestDataExtractionPythonAPI:
                         )
 
                         print(
-                            f"✓ BTC & DXY overlap: {overlap_count} records (timestamp alignment working)"
+                            f"✓ BTC & DXY overlap: {overlap_count} records "
+                            f"(timestamp alignment working)"
                         )
                 else:
                     print(

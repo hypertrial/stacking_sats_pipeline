@@ -176,9 +176,7 @@ class TestFREDLoader:
             with pytest.raises(ValueError) as exc_info:
                 FREDLoader()
             assert "FRED API key is required" in str(exc_info.value)
-            assert "https://fred.stlouisfed.org/docs/api/api_key.html" in str(
-                exc_info.value
-            )
+            assert "https://fred.stlouisfed.org/docs/api/api_key.html" in str(exc_info.value)
 
     @patch("stacking_sats_pipeline.data.fred_loader.requests.get")
     def test_load_from_web_success(self, mock_get, mock_fred_response):
@@ -381,9 +379,7 @@ class TestTimestampConsistency:
             ("2020-12-31", 102.0),  # Year boundary
         ]
 
-        observations = [
-            {"date": date, "value": str(value)} for date, value in test_dates
-        ]
+        observations = [{"date": date, "value": str(value)} for date, value in test_dates]
         mock_response = MagicMock()
         mock_response.json.return_value = {"observations": observations}
         mock_response.raise_for_status.return_value = None
@@ -462,9 +458,7 @@ class TestMultiSourceIntegration:
             assert len(df) == 3
             assert "DXY_Value" in df.columns
 
-    @patch(
-        "stacking_sats_pipeline.data.data_loader.MultiSourceDataLoader.load_from_source"
-    )
+    @patch("stacking_sats_pipeline.data.data_loader.MultiSourceDataLoader.load_from_source")
     def test_load_and_merge_with_fred(self, mock_load_from_source):
         """Test loading and merging data including FRED source."""
 

@@ -103,7 +103,8 @@ class FREDLoader:
 
                 # Skip missing values (marked as '.' in FRED)
                 if value != ".":
-                    # Parse date and normalize to midnight UTC (consistent with other loaders)
+                    # Parse date and normalize to midnight UTC (consistent with other
+                    # loaders)
                     naive_dt = pd.to_datetime(date).normalize()  # Set to midnight
                     utc_dt = naive_dt.tz_localize("UTC")  # Add UTC timezone
 
@@ -119,9 +120,7 @@ class FREDLoader:
             # Remove duplicates and sort
             dxy_df = dxy_df.loc[~dxy_df.index.duplicated(keep="last")].sort_index()
 
-            logging.info(
-                "Loaded FRED U.S. Dollar Index data into memory (%d rows)", len(dxy_df)
-            )
+            logging.info("Loaded FRED U.S. Dollar Index data into memory (%d rows)", len(dxy_df))
             self._validate_data(dxy_df)
 
             return dxy_df
@@ -295,9 +294,7 @@ class FREDLoader:
         Basic sanity‑check on the FRED dataframe.
         """
         if df.empty or "DXY_Value" not in df.columns:
-            raise ValueError(
-                "Invalid FRED U.S. Dollar Index data – 'DXY_Value' column missing."
-            )
+            raise ValueError("Invalid FRED U.S. Dollar Index data – 'DXY_Value' column missing.")
         if not isinstance(df.index, pd.DatetimeIndex):
             raise ValueError("Index must be DatetimeIndex.")
         if df.index.tz is None:
