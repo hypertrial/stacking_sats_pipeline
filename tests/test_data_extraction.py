@@ -52,12 +52,8 @@ class TestDataExtractionPythonAPI:
                     expected_sources.append("fred")
 
                 for source in expected_sources:
-                    source_columns = [
-                        col for col in df.columns if col.endswith(f"_{source}")
-                    ]
-                    assert len(source_columns) > 0, (
-                        f"Should have columns from {source} source"
-                    )
+                    source_columns = [col for col in df.columns if col.endswith(f"_{source}")]
+                    assert len(source_columns) > 0, f"Should have columns from {source} source"
 
                 print(f"✓ CSV merged extraction test: {df.shape} data shape")
 
@@ -99,12 +95,8 @@ class TestDataExtractionPythonAPI:
                     expected_sources.append("fred")
 
                 for source in expected_sources:
-                    source_columns = [
-                        col for col in df.columns if col.endswith(f"_{source}")
-                    ]
-                    assert len(source_columns) > 0, (
-                        f"Should have columns from {source} source"
-                    )
+                    source_columns = [col for col in df.columns if col.endswith(f"_{source}")]
+                    assert len(source_columns) > 0, f"Should have columns from {source} source"
 
                 print(f"✓ Parquet merged extraction test: {df.shape} data shape")
 
@@ -114,9 +106,7 @@ class TestDataExtractionPythonAPI:
     def test_extract_all_data_default_directory(self):
         """Test extract_all_data with default directory (current directory)."""
         with (
-            patch(
-                "stacking_sats_pipeline.main.MultiSourceDataLoader"
-            ) as mock_loader_class,
+            patch("stacking_sats_pipeline.main.MultiSourceDataLoader") as mock_loader_class,
         ):
             # Mock the loader instance and its methods
             mock_loader = MagicMock()
@@ -162,9 +152,7 @@ class TestDataExtractionPythonAPI:
         """Test extract_all_data behavior when FRED API key is missing."""
         with (
             patch("stacking_sats_pipeline.main.os.getenv") as mock_getenv,
-            patch(
-                "stacking_sats_pipeline.main.MultiSourceDataLoader"
-            ) as mock_loader_class,
+            patch("stacking_sats_pipeline.main.MultiSourceDataLoader") as mock_loader_class,
         ):
             # Mock no API key
             mock_getenv.return_value = None
@@ -210,9 +198,7 @@ class TestDataExtractionPythonAPI:
 
     def test_extract_all_data_error_handling(self):
         """Test error handling in extract_all_data."""
-        with patch(
-            "stacking_sats_pipeline.main.MultiSourceDataLoader"
-        ) as mock_loader_class:
+        with patch("stacking_sats_pipeline.main.MultiSourceDataLoader") as mock_loader_class:
             # Mock the loader instance
             mock_loader = MagicMock()
             mock_loader_class.return_value = mock_loader
@@ -235,9 +221,7 @@ class TestDataExtractionPythonAPI:
     def test_extract_all_data_invalid_format(self):
         """Test extract_all_data with invalid format defaults to CSV."""
         with (
-            patch(
-                "stacking_sats_pipeline.main.MultiSourceDataLoader"
-            ) as mock_loader_class,
+            patch("stacking_sats_pipeline.main.MultiSourceDataLoader") as mock_loader_class,
         ):
             # Mock the loader instance
             mock_loader = MagicMock()
@@ -329,9 +313,7 @@ class TestDataExtractionPythonAPI:
 
                 df = pd.read_csv(merged_file, index_col=0, parse_dates=True)
                 assert len(df) > 100, "Merged data should have substantial records"
-                assert isinstance(df.index, pd.DatetimeIndex), (
-                    "Should have datetime index"
-                )
+                assert isinstance(df.index, pd.DatetimeIndex), "Should have datetime index"
 
                 # Check that we have columns from different sources
                 coinmetrics_cols = [col for col in df.columns if "coinmetrics" in col]
@@ -351,16 +333,12 @@ class TestDataExtractionPythonAPI:
                     for col in price_cols:
                         valid_prices = df[col].dropna()
                         if len(valid_prices) > 0:
-                            assert valid_prices.min() > 0, (
-                                f"{col} should have positive prices"
-                            )
+                            assert valid_prices.min() > 0, f"{col} should have positive prices"
                             assert valid_prices.max() < 1_000_000, (
                                 f"{col} should have reasonable prices"
                             )
 
-                fear_greed_cols = [
-                    col for col in df.columns if "fear_greed_value" in col
-                ]
+                fear_greed_cols = [col for col in df.columns if "fear_greed_value" in col]
                 if fear_greed_cols:
                     for col in fear_greed_cols:
                         valid_values = df[col].dropna()
@@ -386,9 +364,7 @@ class TestDataExtractionPythonAPI:
                 assert merged_file.exists(), "Merged CSV file should exist"
 
                 df = pd.read_csv(merged_file, index_col=0, parse_dates=True)
-                assert isinstance(df.index, pd.DatetimeIndex), (
-                    "Should have datetime index"
-                )
+                assert isinstance(df.index, pd.DatetimeIndex), "Should have datetime index"
 
                 # Verify all timestamps are at midnight UTC (the fix)
                 sample_timestamps = df.index[:10]  # Check first 10 timestamps
@@ -401,14 +377,10 @@ class TestDataExtractionPythonAPI:
 
                 # Check for overlapping data between sources
                 coinmetrics_cols = [
-                    col
-                    for col in df.columns
-                    if "coinmetrics" in col and "PriceUSD" in col
+                    col for col in df.columns if "coinmetrics" in col and "PriceUSD" in col
                 ]
                 feargreed_cols = [
-                    col
-                    for col in df.columns
-                    if "feargreed" in col and "fear_greed_value" in col
+                    col for col in df.columns if "feargreed" in col and "fear_greed_value" in col
                 ]
 
                 if coinmetrics_cols and feargreed_cols:
@@ -426,9 +398,7 @@ class TestDataExtractionPythonAPI:
 
                 # Check FRED data overlap if available
                 if os.getenv("FRED_API_KEY"):
-                    fred_cols = [
-                        col for col in df.columns if "fred" in col and "DXY" in col
-                    ]
+                    fred_cols = [col for col in df.columns if "fred" in col and "DXY" in col]
                     if coinmetrics_cols and fred_cols:
                         btc_col = coinmetrics_cols[0]
                         dxy_col = fred_cols[0]
@@ -454,9 +424,7 @@ class TestDataExtractionPythonAPI:
                             f"(timestamp alignment working)"
                         )
                 else:
-                    print(
-                        "✓ FRED API key not available - skipping BTC & DXY overlap test"
-                    )
+                    print("✓ FRED API key not available - skipping BTC & DXY overlap test")
 
                 print("✓ Timestamp alignment verification in CSV extraction passed")
 
@@ -477,9 +445,7 @@ class TestDataExtractionUtilities:
         """Test that extract_all_data is properly exported in __init__.py."""
         from stacking_sats_pipeline import __all__ as exported_functions
 
-        assert "extract_all_data" in exported_functions, (
-            "extract_all_data should be in __all__"
-        )
+        assert "extract_all_data" in exported_functions, "extract_all_data should be in __all__"
 
     def test_extract_all_data_function_signature(self):
         """Test extract_all_data function signature."""
@@ -495,9 +461,7 @@ class TestDataExtractionUtilities:
 
     def test_path_handling(self):
         """Test that the function handles different path types correctly."""
-        with patch(
-            "stacking_sats_pipeline.main.MultiSourceDataLoader"
-        ) as mock_loader_class:
+        with patch("stacking_sats_pipeline.main.MultiSourceDataLoader") as mock_loader_class:
             # Mock the loader instance
             mock_loader = MagicMock()
             mock_loader_class.return_value = mock_loader
@@ -538,9 +502,7 @@ class TestDataExtractionUtilities:
 
     def test_no_available_sources(self):
         """Test behavior when no data sources are available."""
-        with patch(
-            "stacking_sats_pipeline.main.MultiSourceDataLoader"
-        ) as mock_loader_class:
+        with patch("stacking_sats_pipeline.main.MultiSourceDataLoader") as mock_loader_class:
             # Mock the loader instance with no available sources
             mock_loader = MagicMock()
             mock_loader_class.return_value = mock_loader
