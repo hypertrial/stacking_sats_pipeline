@@ -1,5 +1,5 @@
 """
-Generic data extraction and loading utilities for multiple BTC price data sources.
+Multi-source data loader for various cryptocurrency and financial data sources.
 """
 
 from __future__ import annotations
@@ -10,6 +10,23 @@ from typing import Protocol
 
 import numpy as np
 import pandas as pd
+
+# Load environment variables from .env file if available
+try:
+    from dotenv import load_dotenv
+
+    # Look for .env file in current working directory first, then package directory
+    env_paths = [
+        Path.cwd() / ".env",  # Current working directory
+        Path(__file__).parent.parent.parent / ".env",  # Package directory
+    ]
+
+    for env_path in env_paths:
+        if env_path.exists():
+            load_dotenv(dotenv_path=env_path)
+            break
+except ImportError:
+    pass
 
 from .coinmetrics_loader import CoinMetricsLoader
 from .fear_gread_loader import FearGreedLoader

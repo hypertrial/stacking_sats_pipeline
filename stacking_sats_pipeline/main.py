@@ -5,6 +5,23 @@ import os
 import sys
 from pathlib import Path
 
+# Load environment variables from .env file if available
+try:
+    from dotenv import load_dotenv
+
+    # Look for .env file in current working directory first, then package directory
+    env_paths = [
+        Path.cwd() / ".env",  # Current working directory
+        Path(__file__).parent.parent / ".env",  # Package directory
+    ]
+
+    for env_path in env_paths:
+        if env_path.exists():
+            load_dotenv(dotenv_path=env_path)
+            break
+except ImportError:
+    pass
+
 from .backtest.checks import (
     backtest_dynamic_dca,
     validate_strategy_comprehensive,

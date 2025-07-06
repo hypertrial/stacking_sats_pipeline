@@ -30,6 +30,25 @@ Data Extraction:
     >>> extract_all_data("parquet", "data/")  # Extract to Parquet in data/ folder
 """
 
+# Load environment variables from .env file if available
+try:
+    from pathlib import Path
+
+    from dotenv import load_dotenv
+
+    # Look for .env file in current working directory first, then package directory
+    env_paths = [
+        Path.cwd() / ".env",  # Current working directory
+        Path(__file__).parent.parent / ".env",  # Package directory
+    ]
+
+    for env_path in env_paths:
+        if env_path.exists():
+            load_dotenv(dotenv_path=env_path)
+            break
+except ImportError:
+    pass
+
 # New simplified interface (recommended)
 # Legacy imports for backward compatibility
 from .backtest import (
