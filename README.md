@@ -1,6 +1,6 @@
 # Stacking Sats Pipeline
 
-A Bitcoin DCA strategy backtesting framework for testing strategies against historical price data.
+A data engineering pipeline for extracting, loading, and merging cryptocurrency and financial data from multiple sources.
 
 ## Requirements
 
@@ -15,34 +15,12 @@ pip install stacking-sats-pipeline
 
 ## Quick Start
 
-### Library Interface
-
-```python
-from stacking_sats_pipeline import backtest, strategy
-
-# Simple function approach
-def my_strategy(df):
-    """Calculate weights based on price data"""
-    # Your strategy logic here
-    return weights
-
-results = backtest(my_strategy)
-results.summary()
-results.plot()
-
-# Or use decorator approach
-@strategy(name="My Strategy", auto_backtest=True)
-def my_strategy(df):
-    return weights
-```
-
-> **Note**: Data is now loaded directly into memory from CoinMetrics (no CSV files needed). For legacy file-based loading, use `load_data(use_memory=False)`.
-
 ### Data Extraction
 
 Extract all data sources to local files for offline analysis:
 
 #### CLI Usage
+
 ```bash
 # Extract all data to CSV format
 stacking-sats --extract-data csv
@@ -56,6 +34,7 @@ stacking-sats --extract-data parquet -o exports/
 ```
 
 #### Python API
+
 ```python
 from stacking_sats_pipeline import extract_all_data
 
@@ -66,93 +45,84 @@ extract_all_data("csv")
 extract_all_data("parquet", "data/exports/")
 ```
 
-**What gets extracted:**
-- 📈 **Bitcoin Price Data** (CoinMetrics) → `btc_coinmetrics.csv/parquet`
-- 😨 **Fear & Greed Index** (Alternative.me) → `fear_greed.csv/parquet`  
-- 💵 **U.S. Dollar Index** (FRED) → `dxy_fred.csv/parquet`*
+### Data Loading
 
-*\*Requires `FRED_API_KEY` environment variable. Get a free key at [FRED API](https://fred.stlouisfed.org/docs/api/api_key.html)*
+```python
+from stacking_sats_pipeline import load_data
+
+# Load Bitcoin price data
+df = load_data()
+
+# Load specific data source
+from stacking_sats_pipeline.data import CoinMetricsLoader
+loader = CoinMetricsLoader()
+btc_data = loader.load_from_web()
+```
+
+**What gets extracted:**
+
+- 📈 **Bitcoin Price Data** (CoinMetrics) → `btc_coinmetrics.csv/parquet`
+- 😨 **Fear & Greed Index** (Alternative.me) → `fear_greed.csv/parquet`
+- 💵 **U.S. Dollar Index** (FRED) → `dxy_fred.csv/parquet`\*
+
+_\*Requires `FRED_API_KEY` environment variable. Get a free key at [FRED API](https://fred.stlouisfed.org/docs/api/api_key.html)_
 
 **File Format Benefits:**
+
 - **CSV**: Human-readable, universally compatible
 - **Parquet**: ~50% smaller files, faster loading, preserves data types
 
-### Interactive Tutorial
-
-```bash
-pip install marimo
-marimo edit tutorials/examples.py
-```
-
-### Command Line
-
-```bash
-stacking-sats --strategy path/to/your_strategy.py
-```
-
-## Usage Examples
-
-### Basic Strategy
+### Multi-Source Data Loading
 
 ```python
-def simple_ma_strategy(df):
-    """Buy more when price is below 200-day moving average"""
-    df = df.copy()
-    past_price = df["PriceUSD"].shift(1)
-    df["ma200"] = past_price.rolling(window=200, min_periods=1).mean()
-    
-    base_weight = 1.0 / len(df)
-    weights = pd.Series(base_weight, index=df.index)
-    
-    # Buy 50% more when below MA
-    below_ma = df["PriceUSD"] < df["ma200"]
-    weights[below_ma] *= 1.5
-    
-    return weights / weights.sum()
+from stacking_sats_pipeline.data import MultiSourceDataLoader
 
-results = backtest(simple_ma_strategy)
+# Load and merge data from all available sources
+loader = MultiSourceDataLoader()
+available_sources = loader.get_available_sources()
+merged_df = loader.load_and_merge(available_sources)
+
+# Available sources: coinmetrics, feargreed, fred (if API key available)
+print(f"Available data sources: {available_sources}")
+print(f"Merged data shape: {merged_df.shape}")
 ```
 
-### Quick Comparison
+## Data Sources
+
+### CoinMetrics (Bitcoin Price Data)
 
 ```python
-strategy1_perf = quick_backtest(strategy1)
-strategy2_perf = quick_backtest(strategy2)
+from stacking_sats_pipeline.data import CoinMetricsLoader
+
+loader = CoinMetricsLoader(data_dir="data/")
+df = loader.load_from_web()  # Fetch latest data
+df = loader.load_from_file()  # Load cached data (fetches if missing)
+
+# Extract to files
+csv_path = loader.extract_to_csv()
+parquet_path = loader.extract_to_parquet()
 ```
 
-### Custom Parameters
+### Fear & Greed Index
 
 ```python
-results = backtest(
-    my_strategy,
-    start_date="2021-01-01",
-    end_date="2023-12-31",
-    cycle_years=2
-)
+from stacking_sats_pipeline.data import FearGreedLoader
+
+loader = FearGreedLoader(data_dir="data/")
+df = loader.load_from_web()
 ```
 
-## Strategy Requirements
-
-Your strategy function must:
+### FRED (Federal Reserve Economic Data)
 
 ```python
-def your_strategy(df: pd.DataFrame) -> pd.Series:
-    """
-    Args:
-        df: DataFrame with 'PriceUSD' column and datetime index
-        
-    Returns:
-        pd.Series with weights that sum to 1.0 per cycle
-    """
-    # Your logic here
-    return weights
-```
+import os
+os.environ['FRED_API_KEY'] = 'your_api_key_here'
 
-**Validation Rules:**
-- Weights sum to 1.0 within each cycle
-- All weights positive (≥ 1e-5)
-- No forward-looking data
-- Return pandas Series indexed by date
+from stacking_sats_pipeline.data import FREDLoader
+
+loader = FREDLoader(data_dir="data/")
+df = loader.load_from_web()  # DXY (Dollar Index) data
+```
 
 ## Development
 
@@ -195,10 +165,11 @@ pytest -m integration        # Run only integration tests
 - **CI enforcement**: Pull requests will fail if code doesn't meet standards
 
 **Quick commands:**
+
 ```bash
 make help          # Show all available commands
 make lint          # Fix ALL issues (autopep8 + ruff + format)
-make autopep8      # Fix line length issues specifically  
+make autopep8      # Fix line length issues specifically
 make format        # Format code with ruff only
 make format-all    # Comprehensive formatting (autopep8 + ruff)
 make check         # Check code quality (what CI runs)
@@ -213,15 +184,6 @@ The data loading system is designed to be modular and extensible. To add new dat
 ## Command Line Options
 
 ```bash
-# Basic usage
-stacking-sats --strategy your_strategy.py
-
-# Skip plots
-stacking-sats --strategy your_strategy.py --no-plot
-
-# Run simulation
-stacking-sats --strategy your_strategy.py --simulate --budget 1000000
-
 # Extract data
 stacking-sats --extract-data csv --output-dir data/
 stacking-sats --extract-data parquet -o exports/
@@ -234,38 +196,103 @@ stacking-sats --help
 
 ```
 ├── stacking_sats_pipeline/
-│   ├── main.py          # Pipeline orchestrator
-│   ├── backtest/        # Validation & simulation
-│   ├── data/            # Modular data loading system
+│   ├── main.py                    # Pipeline orchestrator and CLI
+│   ├── config.py                  # Configuration constants
+│   ├── data/                      # Modular data loading system
 │   │   ├── coinmetrics_loader.py  # CoinMetrics data source
+│   │   ├── fear_greed_loader.py   # Fear & Greed Index data source
+│   │   ├── fred_loader.py         # FRED economic data source
 │   │   ├── data_loader.py         # Multi-source data loader
 │   │   └── CONTRIBUTE.md          # Guide for adding data sources
-│   ├── plot/            # Visualization
-│   ├── strategy/        # Strategy templates
-│   └── weights/         # Historical allocation calculator
-├── tutorials/examples.py # Interactive notebook
-└── tests/               # Comprehensive test suite
+│   └── __init__.py                # Package exports
+├── tutorials/examples.py          # Interactive examples
+└── tests/                         # Comprehensive test suite
 ```
 
-## Output
+## API Reference
 
-The pipeline provides:
-- **Validation Report**: Strategy compliance
-- **Performance Metrics**: SPD (Sats Per Dollar) statistics
-- **Comparative Analysis**: vs Uniform DCA and Static DCA
-- **Visualizations**: Weight distribution plots
+### Core Functions
 
-### Example Output
+```python
+from stacking_sats_pipeline import (
+    extract_all_data,           # Extract all data sources to files
+    load_data,                  # Load Bitcoin price data
+    validate_price_data,        # Validate price data quality
+    extract_btc_data_to_csv,    # Extract Bitcoin data to CSV
+    extract_btc_data_to_parquet # Extract Bitcoin data to Parquet
+)
 ```
-============================================================
-COMPREHENSIVE STRATEGY VALIDATION
-============================================================
-✅ ALL VALIDATION CHECKS PASSED
 
-Your Strategy Performance:
-Dynamic SPD: mean=4510.21, median=2804.03
-Dynamic SPD Percentile: mean=39.35%, median=43.80%
+### Configuration Constants
 
-Mean Excess vs Uniform DCA: -0.40%
-Mean Excess vs Static DCA: 9.35%
+```python
+from stacking_sats_pipeline import (
+    BACKTEST_START,    # Default start date for data range
+    BACKTEST_END,      # Default end date for data range
+    CYCLE_YEARS,       # Default cycle period
+    MIN_WEIGHT,        # Minimum weight threshold
+    PURCHASE_FREQ      # Default purchase frequency
+)
 ```
+
+## Data Validation
+
+All data sources include built-in validation:
+
+```python
+from stacking_sats_pipeline import validate_price_data
+
+# Validate Bitcoin price data
+df = load_data()
+is_valid = validate_price_data(df)
+
+# Custom validation with specific requirements
+requirements = {
+    'required_columns': ['PriceUSD', 'Volume'],
+    'min_price': 100,
+    'max_price': 1000000
+}
+is_valid = validate_price_data(df, **requirements)
+```
+
+## File Format Support
+
+The pipeline supports both CSV and Parquet formats:
+
+- **CSV**: Universal compatibility, human-readable
+- **Parquet**: Better compression (~50% smaller), faster loading, preserves data types
+
+```python
+# CSV format
+extract_all_data("csv", "output_dir/")
+
+# Parquet format
+extract_all_data("parquet", "output_dir/")
+```
+
+## Timestamp Handling
+
+All data sources normalize timestamps to midnight UTC for consistent merging:
+
+```python
+loader = MultiSourceDataLoader()
+merged_df = loader.load_and_merge(['coinmetrics', 'fred'])
+
+# All timestamps are normalized to 00:00:00 UTC
+print(merged_df.index.tz)  # UTC
+print(merged_df.index.time[0])  # 00:00:00
+```
+
+## Error Handling
+
+The pipeline includes comprehensive error handling:
+
+```python
+try:
+    df = extract_all_data("csv")
+except Exception as e:
+    print(f"Data extraction failed: {e}")
+    # Partial extraction may have succeeded
+```
+
+Individual data sources fail gracefully - if one source is unavailable, others will still be extracted.

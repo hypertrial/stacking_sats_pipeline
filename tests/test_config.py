@@ -20,19 +20,17 @@ class TestPackageMetadata:
         assert len(stacking_sats_pipeline.__version__) > 0
 
     def test_package_imports(self):
-        """Test that all exported functions can be imported."""
+        """Test that all exported data engineering functions can be imported."""
         from stacking_sats_pipeline import (
-            BacktestResults,
-            backtest,
-            quick_backtest,
-            strategy,
+            extract_all_data,
+            load_data,
+            validate_price_data,
         )
 
         # Test that all imports are not None
-        assert backtest is not None
-        assert quick_backtest is not None
-        assert strategy is not None
-        assert BacktestResults is not None
+        assert extract_all_data is not None
+        assert load_data is not None
+        assert validate_price_data is not None
 
 
 class TestConfigConstants:
@@ -43,9 +41,6 @@ class TestConfigConstants:
         from stacking_sats_pipeline import (
             BACKTEST_END,
             BACKTEST_START,
-            CYCLE_YEARS,
-            MIN_WEIGHT,
-            PURCHASE_FREQ,
         )
 
         # Test date constants
@@ -53,16 +48,6 @@ class TestConfigConstants:
         assert BACKTEST_END is not None
         assert isinstance(BACKTEST_START, str)
         assert isinstance(BACKTEST_END, str)
-
-        # Test numeric constants
-        assert isinstance(CYCLE_YEARS, int)
-        assert isinstance(PURCHASE_FREQ, str)
-        assert isinstance(MIN_WEIGHT, float)
-
-        # Test reasonable values
-        assert CYCLE_YEARS > 0
-        assert MIN_WEIGHT > 0
-        assert MIN_WEIGHT < 1
 
     def test_date_format(self):
         """Test that date constants are in valid format."""
@@ -78,28 +63,3 @@ class TestConfigConstants:
                 f"Invalid date format in BACKTEST_START ({BACKTEST_START}) or "
                 f"BACKTEST_END ({BACKTEST_END})"
             )
-
-    def test_purchase_freq_valid(self):
-        """Test that PURCHASE_FREQ has a valid value."""
-        from stacking_sats_pipeline import PURCHASE_FREQ
-
-        valid_frequencies = [
-            "D",
-            "W",
-            "M",
-            "Q",
-            "Y",
-            "daily",
-            "weekly",
-            "monthly",
-            "quarterly",
-            "yearly",
-            "Daily",
-            "Weekly",
-            "Monthly",
-        ]
-        assert (
-            PURCHASE_FREQ in valid_frequencies
-            or PURCHASE_FREQ.endswith("D")
-            or PURCHASE_FREQ.endswith("d")
-        )

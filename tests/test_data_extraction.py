@@ -40,7 +40,7 @@ class TestDataExtractionPythonAPI:
                 )
 
                 # Validate that file contains merged data
-                df = pd.read_csv(merged_file, index_col=0, parse_dates=True)
+                df = pd.read_csv(merged_file, index_col=0, parse_dates=True, low_memory=False)
                 assert len(df) > 0, "Merged file should contain data"
                 assert isinstance(df.index, pd.DatetimeIndex), (
                     "Merged file should have datetime index"
@@ -126,6 +126,15 @@ class TestDataExtractionPythonAPI:
             mock_merged_df.index.max.return_value = pd.Timestamp("2023-12-31")
             mock_to_csv = MagicMock()
             mock_merged_df.to_csv = mock_to_csv
+
+            # Mock the filtered DataFrame (result of .loc operation)
+            mock_filtered_df = MagicMock()
+            mock_filtered_df.shape = (800, 5)  # Simulated filtered size
+            mock_filtered_df.index.min.return_value = pd.Timestamp("2020-01-01")
+            mock_filtered_df.index.max.return_value = pd.Timestamp("2023-12-31")
+            mock_filtered_df.to_csv = mock_to_csv
+            mock_merged_df.loc.__getitem__.return_value = mock_filtered_df
+
             mock_loader.load_and_merge.return_value = mock_merged_df
 
             # Mock the directory creation and file operations
@@ -174,6 +183,15 @@ class TestDataExtractionPythonAPI:
             mock_merged_df.index.max.return_value = pd.Timestamp("2023-12-31")
             mock_to_csv = MagicMock()
             mock_merged_df.to_csv = mock_to_csv
+
+            # Mock the filtered DataFrame (result of .loc operation)
+            mock_filtered_df = MagicMock()
+            mock_filtered_df.shape = (800, 3)  # Simulated filtered size
+            mock_filtered_df.index.min.return_value = pd.Timestamp("2020-01-01")
+            mock_filtered_df.index.max.return_value = pd.Timestamp("2023-12-31")
+            mock_filtered_df.to_csv = mock_to_csv
+            mock_merged_df.loc.__getitem__.return_value = mock_filtered_df
+
             mock_loader.load_and_merge.return_value = mock_merged_df
 
             # Mock the directory creation and file operations
@@ -240,6 +258,15 @@ class TestDataExtractionPythonAPI:
             mock_merged_df.index.max.return_value = pd.Timestamp("2023-12-31")
             mock_to_csv = MagicMock()
             mock_merged_df.to_csv = mock_to_csv
+
+            # Mock the filtered DataFrame (result of .loc operation)
+            mock_filtered_df = MagicMock()
+            mock_filtered_df.shape = (800, 3)  # Simulated filtered size
+            mock_filtered_df.index.min.return_value = pd.Timestamp("2020-01-01")
+            mock_filtered_df.index.max.return_value = pd.Timestamp("2023-12-31")
+            mock_filtered_df.to_csv = mock_to_csv
+            mock_merged_df.loc.__getitem__.return_value = mock_filtered_df
+
             mock_loader.load_and_merge.return_value = mock_merged_df
 
             # Mock the directory creation and file operations
@@ -311,7 +338,7 @@ class TestDataExtractionPythonAPI:
                 merged_file = Path(temp_dir) / "merged_crypto_data.csv"
                 assert merged_file.exists(), "Merged CSV file should exist"
 
-                df = pd.read_csv(merged_file, index_col=0, parse_dates=True)
+                df = pd.read_csv(merged_file, index_col=0, parse_dates=True, low_memory=False)
                 assert len(df) > 100, "Merged data should have substantial records"
                 assert isinstance(df.index, pd.DatetimeIndex), "Should have datetime index"
 
@@ -363,7 +390,7 @@ class TestDataExtractionPythonAPI:
                 merged_file = Path(temp_dir) / "merged_crypto_data.csv"
                 assert merged_file.exists(), "Merged CSV file should exist"
 
-                df = pd.read_csv(merged_file, index_col=0, parse_dates=True)
+                df = pd.read_csv(merged_file, index_col=0, parse_dates=True, low_memory=False)
                 assert isinstance(df.index, pd.DatetimeIndex), "Should have datetime index"
 
                 # Verify all timestamps are at midnight UTC (the fix)
@@ -479,6 +506,15 @@ class TestDataExtractionUtilities:
             mock_merged_df.index.max.return_value = pd.Timestamp("2023-12-31")
             mock_to_csv = MagicMock()
             mock_merged_df.to_csv = mock_to_csv
+
+            # Mock the filtered DataFrame (result of .loc operation)
+            mock_filtered_df = MagicMock()
+            mock_filtered_df.shape = (800, 3)  # Simulated filtered size
+            mock_filtered_df.index.min.return_value = pd.Timestamp("2020-01-01")
+            mock_filtered_df.index.max.return_value = pd.Timestamp("2023-12-31")
+            mock_filtered_df.to_csv = mock_to_csv
+            mock_merged_df.loc.__getitem__.return_value = mock_filtered_df
+
             mock_loader.load_and_merge.return_value = mock_merged_df
 
             # Mock the directory creation and file operations
