@@ -291,11 +291,8 @@ class TestPerformance:
             memory_usage = df.memory_usage(deep=True).sum()
             assert memory_usage < 100_000_000, f"Memory usage too high: {memory_usage}"
 
-            print(
-                f"✓ Performance: {len(df)} records in {loading_time:.2f}s, {
-                    memory_usage:,                
-                } bytes"
-            )
+            memory_mb = memory_usage / 1_000_000
+            print(f"✓ Performance: {len(df)} records in {loading_time:.2f}s, {memory_mb:.1f}MB")
 
         except Exception as e:
             pytest.skip(f"Performance test failed: {e}")
