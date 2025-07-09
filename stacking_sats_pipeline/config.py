@@ -12,5 +12,5 @@ logging.basicConfig(
 )
 
 # Configuration constants for backwards compatibility with tests and tutorials
-BACKTEST_START = "2016-01-01"
-BACKTEST_END = "2024-01-01"
+BACKTEST_START = "2013-01-01"
+BACKTEST_END = "2025-07-01"
