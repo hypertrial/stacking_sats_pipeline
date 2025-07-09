@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "stacking-sats-pipeline"
-version = "0.2.0"
+version = "0.3.0"
 description = "Hypertrial's Stacking Sats Library - Optimized Bitcoin DCA"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -57,7 +57,7 @@ Documentation = "https://github.com/hypertrial/stacking_sats_pipeline#readme"
 stacking-sats = "stacking_sats_pipeline.main:main"
 
 [tool.setuptools]
-packages = ["stacking_sats_pipeline", "stacking_sats_pipeline.backtest", "stacking_sats_pipeline.data", "stacking_sats_pipeline.plot", "stacking_sats_pipeline.strategy", "stacking_sats_pipeline.weights"]
+packages = ["stacking_sats_pipeline", "stacking_sats_pipeline.data"]
 
 [tool.setuptools.package-data]
 stacking_sats_pipeline = ["*.md", "*.txt"]
@@ -87,6 +87,7 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+asyncio_default_fixture_loop_scope = "function"
 markers = [
     "integration: marks tests as integration tests (may require network/data)",
 ] 
