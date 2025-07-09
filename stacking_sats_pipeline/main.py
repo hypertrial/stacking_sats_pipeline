@@ -105,9 +105,8 @@ def extract_all_data(file_format: str = "csv", output_dir: str | Path | None = N
             filtered_rows = int(filtered_shape[0])
             rows_removed = original_rows - filtered_rows
             print(
-                f"📊 Data filtered: {original_rows:,    } → {filtered_rows:,        } rows ({
-                    rows_removed:,                
-                } rows removed)"
+                f"📊 Data filtered: {original_rows:,} → {filtered_rows:,} rows "
+                f"({rows_removed:,} rows removed)"
             )
         except (TypeError, ValueError):
             # Fallback for tests or unexpected data types
