@@ -379,16 +379,16 @@ class YFinanceLoader:
                 # Convert to UTC timezone-aware datetime
                 data[date_col] = pd.to_datetime(data[date_col])
 
-                # Normalize to midnight and handle timezone conversion
-                data[date_col] = data[date_col].dt.normalize()
-
-                # Handle timezone conversion properly
+                # Handle timezone conversion first
                 if data[date_col].dt.tz is None:
                     # If no timezone, localize to UTC
                     data[date_col] = data[date_col].dt.tz_localize("UTC")
                 else:
                     # If already timezone-aware, convert to UTC
                     data[date_col] = data[date_col].dt.tz_convert("UTC")
+
+                # Normalize to midnight UTC AFTER timezone conversion to avoid hour shifts
+                data[date_col] = data[date_col].dt.normalize()
 
                 # Set as index
                 data.set_index(date_col, inplace=True)
@@ -560,9 +560,12 @@ class YFinanceLoader:
         df = pd.read_csv(path, index_col=0, parse_dates=True, low_memory=False)
         df = df.loc[~df.index.duplicated(keep="last")].sort_index()
 
-        # Convert naive datetime index to UTC timezone-aware
+        # Convert naive datetime index to UTC timezone-aware and normalize to midnight
         if df.index.tz is None:
             df.index = df.index.tz_localize("UTC")
+
+        # Normalize to midnight UTC to ensure daily-level data consistency
+        df.index = df.index.normalize()
 
         self._validate_data(df)
         return df
@@ -598,9 +601,12 @@ class YFinanceLoader:
         df = pd.read_parquet(path)
         df = df.loc[~df.index.duplicated(keep="last")].sort_index()
 
-        # Convert naive datetime index to UTC timezone-aware
+        # Convert naive datetime index to UTC timezone-aware and normalize to midnight
         if df.index.tz is None:
             df.index = df.index.tz_localize("UTC")
+
+        # Normalize to midnight UTC to ensure daily-level data consistency
+        df.index = df.index.normalize()
 
         self._validate_data(df)
         return df

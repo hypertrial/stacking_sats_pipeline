@@ -88,8 +88,11 @@ class FearGreedLoader:
                 timestamp = item.get("timestamp")
 
                 if value and timestamp:
-                    # Convert timestamp to datetime (timestamp is in seconds)
+                    # Convert timestamp to datetime (timestamp is in seconds) and
+                    # normalize to date-only
                     dt = datetime.fromtimestamp(int(timestamp), tz=pytz.UTC)
+                    # Normalize to midnight UTC to remove hours/minutes/seconds
+                    dt = dt.replace(hour=0, minute=0, second=0, microsecond=0)
 
                     df_data.append(
                         {
