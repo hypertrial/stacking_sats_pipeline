@@ -66,6 +66,12 @@ def extract_all_data(file_format: str = "csv", output_dir: str | Path | None = N
     else:
         print("❌ Fear & Greed Index data - not available")
 
+    if "yfinance" in available_sources:
+        sources_to_load.append("yfinance")
+        print("✅ Yahoo Finance data (stocks, crypto, indices) - available")
+    else:
+        print("❌ Yahoo Finance data - not available")
+
     # Check for FRED API key
     fred_api_key = os.getenv("FRED_API_KEY")
     if not fred_api_key:

@@ -78,6 +78,7 @@ pytest -m integration
 | `test_data_pipeline_e2e.py` | End-to-end data pipeline    | Real API testing, Parquet support, file format conversion, data quality validation, **timestamp alignment integration** |
 | `test_cli.py`               | Command-line interface      | Argument parsing, error handling, data extraction commands                                                              |
 | `test_config.py`            | Configuration and metadata  | Package metadata, constants validation                                                                                  |
+| `test_yfinance_loader.py`   | Yahoo Finance data loader   | YFinance integration, multi-symbol support, stock/crypto/ETF data, **timestamp alignment**, backward compatibility      |
 
 ## Detailed Test Documentation
 
@@ -138,6 +139,141 @@ Tests for FRED loader timestamp alignment and normalization (addresses timestamp
   - Tests dates affected by Daylight Saving Time transitions
   - Verifies year boundaries and special dates are handled correctly
   - Ensures no timezone conversion creates unexpected time offsets
+
+#### TestYFinanceLoader ⭐ **NEW**
+
+Tests for Yahoo Finance data loader with comprehensive multi-symbol support:
+
+- **Initialization and Configuration**:
+
+  - `test_init_default_params()`: Tests default parameter initialization
+  - `test_init_custom_params()`: Tests custom parameter configuration
+  - `test_init_invalid_symbols_type()`: Tests validation of symbols parameter
+  - `test_init_unknown_symbols_warning()`: Tests warning for unknown symbols
+
+- **Symbol Management**:
+
+  - `test_get_available_symbols()`: Tests class method for retrieving available symbols
+  - `test_get_symbols_by_category()`: Tests category-based symbol retrieval
+  - `test_get_symbols_by_category_invalid()`: Tests error handling for invalid categories
+
+- **Data Loading and Processing**:
+
+  - `test_load_from_web_single_symbol()`: Tests loading single symbol from Yahoo Finance
+  - `test_load_from_web_multiple_symbols()`: Tests loading multiple symbols simultaneously
+  - `test_load_from_web_empty_response()`: Tests handling of empty API responses
+  - `test_load_from_web_exception_handling()`: Tests error handling during data loading
+
+- **Convenience Methods**:
+
+  - `test_load_symbols_method()`: Tests temporary symbol loading without changing configuration
+  - `test_load_category_method()`: Tests loading entire categories (stocks, crypto, ETFs, indices)
+  - `test_load_category_invalid_category()`: Tests error handling for invalid categories
+
+- **File Operations**:
+
+  - `test_extract_to_csv()`: Tests data extraction to CSV format
+  - `test_extract_to_parquet()`: Tests data extraction to Parquet format
+  - `test_load_from_file_auto_download()`: Tests automatic download when file doesn't exist
+  - `test_load_from_parquet_auto_download()`: Tests automatic Parquet download
+
+- **Data Loading Methods**:
+
+  - `test_load_method_memory_mode()`: Tests in-memory data loading
+  - `test_load_method_file_mode_csv()`: Tests file-based loading with CSV format
+  - `test_load_method_file_mode_parquet()`: Tests file-based loading with Parquet format
+
+- **Data Validation**:
+  - `test_validate_data_valid()`: Tests validation with valid Yahoo Finance data
+  - `test_validate_data_empty()`: Tests validation with empty DataFrame
+  - `test_validate_data_no_price_columns()`: Tests validation when price columns are missing
+  - `test_validate_data_invalid_index()`: Tests validation with invalid index
+  - `test_validate_data_naive_datetime()`: Tests validation with timezone-naive datetime
+  - `test_validate_data_wrong_timezone()`: Tests validation with incorrect timezone
+
+#### TestYFinanceLoaderTimestampAlignment ⭐ **NEW**
+
+Tests for YFinance loader timestamp alignment and normalization:
+
+- **Midnight UTC Normalization**: `test_yfinance_timestamps_normalized_to_midnight_utc()`
+
+  - Verifies all YFinance timestamps are normalized to exactly midnight UTC (00:00:00+00:00)
+  - Ensures no hour/minute/second/microsecond components remain
+  - Critical for maintaining consistency with other data sources
+
+- **Cross-Source Consistency**: `test_yfinance_timestamp_consistency_with_other_sources()`
+
+  - Tests that YFinance timestamps match CoinMetrics timestamp format exactly
+  - Verifies timestamps can be properly aligned for merging
+  - Ensures consistent multi-source data strategies
+
+- **DST and Edge Case Handling**: `test_yfinance_no_timezone_conversion_artifacts()`
+  - Tests dates affected by Daylight Saving Time transitions
+  - Verifies year boundaries and special dates are handled correctly
+  - Ensures no timezone conversion creates unexpected time offsets
+
+#### TestYFinanceLoaderIntegration ⭐ **NEW**
+
+Integration tests for YFinanceLoader with real Yahoo Finance API:
+
+- **Bitcoin Data Integration**: `test_load_btc_data_integration()`
+
+  - Tests loading real Bitcoin data from Yahoo Finance API
+  - Validates data quality and reasonable price ranges
+  - Verifies timestamp alignment with midnight UTC normalization
+
+- **Stock Data Integration**: `test_load_stock_data_integration()`
+
+  - Tests loading real stock data (AAPL) from Yahoo Finance API
+  - Validates OHLCV data structure and price reasonableness
+  - Tests with recent data (6 months) for relevance
+
+- **Multi-Symbol Integration**: `test_load_multiple_symbols_integration()`
+
+  - Tests loading multiple symbols simultaneously from real API
+  - Validates data alignment across different asset classes
+  - Tests stocks, crypto, and other symbols together
+
+- **Category Loading Integration**: `test_load_category_integration()`
+
+  - Tests loading entire categories (crypto) from real API
+  - Validates category-based data retrieval functionality
+  - Tests with recent data for currency and relevance
+
+- **File Operations Integration**: `test_file_operations_integration()`
+
+  - Tests complete file operation cycle with real API data
+  - Validates CSV and Parquet extraction and loading
+  - Ensures data integrity across file formats
+
+#### TestYFinanceLoaderBackwardCompatibility ⭐ **NEW**
+
+Tests for backward compatibility functions:
+
+- **BTC Data Functions**:
+
+  - `test_load_btc_data_from_web()`: Tests legacy BTC data loading function
+  - `test_extract_btc_data_to_csv()`: Tests legacy CSV extraction function
+  - `test_extract_btc_data_to_parquet()`: Tests legacy Parquet extraction function
+
+- **Convenience Functions**:
+
+  - `test_load_stock_data_from_web()`: Tests stock data convenience function
+  - `test_load_crypto_data_from_web()`: Tests crypto data convenience function
+
+- **Column Naming Compatibility**:
+  - Validates that BTC data functions return `PriceUSD` column (not `BTC-USD_Close`)
+  - Ensures compatibility with existing data processing pipelines
+
+#### TestYFinanceLoaderMultiSourceIntegration ⭐ **NEW**
+
+Tests for YFinanceLoader integration with MultiSourceDataLoader:
+
+- **Multi-Source Registration**: `test_multisource_integration()`
+
+  - Tests that YFinanceLoader is properly registered in MultiSourceDataLoader
+  - Validates that "yfinance" appears in available sources
+  - Tests loading data through the multi-source interface
 
 #### TestDataSourceTimestampConsistency ⭐ **NEW**
 
@@ -454,7 +590,7 @@ Tests comprehensive Parquet file support throughout the data pipeline:
 
 #### Real API Integration
 
-- Uses actual CoinMetrics and FRED APIs (not mocked)
+- Uses actual CoinMetrics, FRED, and Yahoo Finance APIs (not mocked)
 - Tests with real-world data quality issues
 - Validates API authentication and error handling
 - Tests network resilience and timeout handling
@@ -466,12 +602,20 @@ Tests comprehensive Parquet file support throughout the data pipeline:
 - Tests performance and storage efficiency
 - Validates data type preservation and schema consistency
 
+#### Multi-Source Data Integration
+
+- Tests Yahoo Finance loader with stocks, crypto, ETFs, and indices
+- Validates multi-symbol data loading and alignment
+- Tests category-based data retrieval
+- Ensures consistent timestamp normalization across all sources
+
 #### Data Quality Validation
 
 - Tests with real data that may have missing values
 - Validates handling of edge cases in historical data
 - Tests data cleaning and validation pipelines
 - Handles real-world Bitcoin price data quirks
+- Validates OHLCV data structure from Yahoo Finance
 
 #### Performance and Resource Testing
 
@@ -479,6 +623,7 @@ Tests comprehensive Parquet file support throughout the data pipeline:
 - Validates loading time constraints
 - Tests file size efficiency
 - Validates resource cleanup and management
+- Tests multi-symbol loading performance
 
 ## Test Configuration
 
@@ -532,6 +677,9 @@ pytest tests/test_cli.py
 
 # Configuration
 pytest tests/test_config.py
+
+# Yahoo Finance data loader
+pytest tests/test_yfinance_loader.py
 ```
 
 ### Test Output Options
@@ -625,6 +773,9 @@ The test suite aims for comprehensive coverage of:
 - ✅ Multi-format data export functionality
 - ✅ Timestamp alignment and normalization
 - ✅ Multi-source data merging and cleaning
+- ✅ Yahoo Finance data loader with multi-symbol support
+- ✅ Stock, crypto, ETF, and index data loading
+- ✅ Backward compatibility with existing functions
 
 Run coverage analysis:
 

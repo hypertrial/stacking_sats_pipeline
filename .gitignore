@@ -177,3 +177,5 @@ btc_coinmetrics.csv
 
 # Test cache (for faster test runs)
 tests/.test_cache/
+merged_crypto_data.csv
+merged_crypto_data.parquet

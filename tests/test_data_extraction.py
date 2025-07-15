@@ -172,10 +172,7 @@ class TestDataExtractionPythonAPI:
             parquet_size = parquet_file.stat().st_size
 
             compression_ratio = parquet_size / csv_size
-            print(
-                f"✓ File size comparison: CSV={csv_size:,    } bytes, Parquet={
-                    parquet_size:,        } bytes"
-            )
+            print(f"✓ File size comparison: CSV={csv_size:,} bytes, Parquet={parquet_size:,} bytes")
             print(f"✓ Compression ratio: {compression_ratio:.2f}")
 
             # For small mock datasets, Parquet may have more overhead

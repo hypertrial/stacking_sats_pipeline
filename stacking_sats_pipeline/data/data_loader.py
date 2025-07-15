@@ -31,6 +31,7 @@ except ImportError:
 from .coinmetrics_loader import CoinMetricsLoader
 from .fear_gread_loader import FearGreedLoader
 from .fred_loader import FREDLoader
+from .yfinance_loader import YFinanceLoader
 
 # Logging configuration
 # ---------------------------
@@ -73,6 +74,17 @@ class MultiSourceDataLoader:
             "coinmetrics": CoinMetricsLoader(self.data_dir),
             "feargreed": FearGreedLoader(self.data_dir),
         }
+
+        # Add YFinance loader with comprehensive default symbols
+        try:
+            yfinance_loader = YFinanceLoader(self.data_dir, symbols=YFinanceLoader.DEFAULT_SYMBOLS)
+            self.loaders["yfinance"] = yfinance_loader
+            logging.info("YFinance loader registered successfully")
+        except ImportError as e:
+            logging.warning(
+                "YFinance loader not available: %s. Install yfinance to enable Yahoo Finance data.",
+                e,
+            )
 
         # Add FRED loader only if API key is available
         try:
