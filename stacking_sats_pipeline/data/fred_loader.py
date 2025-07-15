@@ -172,7 +172,8 @@ class FREDLoader:
         Returns
         -------
         pd.DataFrame
-            DataFrame with economic data, indexed by datetime, with columns named like 'DGS10_Value'.
+            DataFrame with economic data, indexed by datetime, with columns named like
+            'DGS10_Value'.
         """
         logging.info(
             "Downloading %d series from FRED API: %s", len(self.series_ids), self.series_ids
@@ -289,7 +290,8 @@ class FREDLoader:
         Parameters
         ----------
         category : str
-            Category name: 'rates', 'inflation', 'credit', 'equities', 'fx', 'commodities', 'crypto', 'alt'
+            Category name: 'rates', 'inflation', 'credit', 'equities', 'fx', 'commodities',
+            'crypto', 'alt'
 
         Returns
         -------

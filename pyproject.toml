@@ -39,6 +39,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
+    "pytest-xdist>=3.0.0",
     "ruff>=0.1.0",
     "pre-commit>=3.0.0",
     "autopep8>=2.0.0",
@@ -90,6 +91,8 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 asyncio_default_fixture_loop_scope = "function"
 norecursedirs = ["models", "*.egg", ".git", ".tox", "dist", "build"]
+# Exclude integration tests by default for faster development
+addopts = "-m 'not integration'"
 markers = [
     "integration: marks tests as integration tests (may require network/data)",
 ] 

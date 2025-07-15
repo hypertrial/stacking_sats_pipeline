@@ -9,6 +9,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
+import pandas as pd
 import pytest
 
 
@@ -182,6 +183,41 @@ class TestCLIDataExtraction:
                 pytest.skip("CLI integration test timed out")
             except Exception as e:
                 pytest.skip(f"CLI integration test failed: {e}")
+
+    def test_cli_extract_data_integration_mocked(self, mock_extract_all_data, temp_dir):
+        """Fast mocked version of CLI integration test."""
+        with patch("stacking_sats_pipeline.main.extract_all_data", mock_extract_all_data):
+            # Mock sys.argv to simulate CLI arguments
+            test_args = [
+                "stacking_sats_pipeline.main",
+                "--extract-data",
+                "csv",
+                "--output-dir",
+                str(temp_dir),
+            ]
+
+            with patch("sys.argv", test_args):
+                # Import and call main function
+                from stacking_sats_pipeline.main import main
+
+                # This should complete quickly using mocked data
+                try:
+                    main()
+
+                    # Check that output file was created
+                    expected_file = temp_dir / "merged_crypto_data.csv"
+                    assert expected_file.exists(), "Output file should be created"
+                    assert expected_file.stat().st_size > 0, "Output file should not be empty"
+
+                    # Verify the file contains expected data
+                    df = pd.read_csv(expected_file, index_col=0, parse_dates=True, low_memory=False)
+                    assert len(df) > 0, "Output should contain data"
+                    assert isinstance(df.index, pd.DatetimeIndex), "Should have datetime index"
+
+                except SystemExit as e:
+                    # main() may call sys.exit(), which is normal
+                    if e.code != 0:
+                        pytest.fail(f"CLI failed with exit code: {e.code}")
 
     def test_cli_extract_data_help_includes_new_options(self):
         """Test that CLI help includes new data extraction options."""

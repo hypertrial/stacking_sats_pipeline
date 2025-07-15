@@ -15,8 +15,29 @@ dev-install: ## Install package with dev dependencies
 setup-dev: dev-install ## Set up development environment with pre-commit hooks
 	pre-commit install
 
-test: ## Run tests
+test: ## Run fast unit tests (excludes integration tests)
 	pytest tests/ -v
+
+test-parallel: ## Run fast unit tests in parallel for maximum speed
+	pytest tests/ -v -n auto
+
+test-all: ## Run all tests including integration tests
+	pytest tests/ -v -m ""
+
+test-all-parallel: ## Run all tests including integration tests in parallel
+	pytest tests/ -v -m "" -n auto
+
+test-integration: ## Run only integration tests
+	pytest tests/ -v -m "integration"
+
+test-fred: ## Run only FRED-related tests
+	pytest tests/ -v -k "fred"
+
+test-fast: ## Run tests with minimal output for quick feedback
+	pytest tests/ -q
+
+test-performance: ## Run tests with timing information to identify slow tests
+	pytest tests/ -v --durations=10
 
 lint: ## Run comprehensive linting and formatting
 	python3 -m autopep8 --in-place --aggressive --aggressive --max-line-length=88 --recursive .
