@@ -149,11 +149,11 @@ class TestDataPipelineCore:
         mock_get.side_effect = mock_requests_side_effect
 
         merged_df = load_and_merge_data(["coinmetrics", "fred"], use_memory=True)
-        expected_cols = ["PriceUSD_coinmetrics", "DXY_Value_fred"]
+        expected_cols = ["PriceUSD_coinmetrics", "DTWEXBGS_Value_fred"]
         TestHelpers.validate_basic_structure(merged_df, expected_cols, min_records=3)
 
         btc_count = merged_df["PriceUSD_coinmetrics"].notna().sum()
-        dxy_count = merged_df["DXY_Value_fred"].notna().sum()
+        dxy_count = merged_df["DTWEXBGS_Value_fred"].notna().sum()
         assert btc_count > 0 and dxy_count > 0
 
         print(f"✓ Merged: {len(merged_df)} total, {btc_count} BTC, {dxy_count} DXY")

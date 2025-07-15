@@ -191,7 +191,7 @@ class TestFREDLoader:
 
         assert isinstance(df, pd.DataFrame)
         assert len(df) == 3
-        assert "DXY_Value" in df.columns
+        assert "DTWEXBGS_Value" in df.columns  # Updated column name
         assert isinstance(df.index, pd.DatetimeIndex)
         assert df.index.name == "time"
 
@@ -205,8 +205,8 @@ class TestFREDLoader:
     @pytest.mark.parametrize(
         "response_data,expected_error",
         [
-            ({"error": "Invalid API key"}, "Invalid response from FRED API"),
-            ({"observations": []}, "No data returned from FRED API"),
+            ({"error": "Invalid API key"}, "No valid data retrieved for any series"),
+            ({"observations": []}, "No valid data retrieved for any series"),
             (
                 {
                     "observations": [
@@ -214,7 +214,7 @@ class TestFREDLoader:
                         {"date": "2020-01-02", "value": "."},
                     ]
                 },
-                "No valid data points found",
+                "No valid data retrieved for any series",
             ),
         ],
     )
@@ -248,7 +248,7 @@ class TestFREDLoader:
         df = loader.load_from_web()
 
         assert len(df) == 2  # Missing values filtered out
-        assert df["DXY_Value"].tolist() == [100.5, 101.0]
+        assert df["DTWEXBGS_Value"].tolist() == [100.5, 101.0]  # Updated column name
 
     @patch("stacking_sats_pipeline.data.fred_loader.requests.get")
     @pytest.mark.parametrize(
@@ -268,14 +268,16 @@ class TestFREDLoader:
             mock_get.side_effect = exception_type
 
         loader = FREDLoader(api_key="test_key")
-        with pytest.raises(type(exception_type)):
+        # Updated expectation - now raises ValueError instead of network exception
+        with pytest.raises(ValueError) as exc_info:
             loader.load_from_web()
+        assert "No valid data retrieved for any series" in str(exc_info.value)
 
     @patch("stacking_sats_pipeline.data.fred_loader.FREDLoader.load_from_web")
     def test_file_operations(self, mock_load_web):
         """Test file loading and creation operations."""
         mock_df = pd.DataFrame(
-            {"DXY_Value": [100.0, 101.0]},
+            {"DTWEXBGS_Value": [100.0, 101.0]},
             index=pd.date_range("2020-01-01", periods=2, name="time", tz="UTC"),
         )
         mock_load_web.return_value = mock_df
@@ -295,7 +297,7 @@ class TestFREDLoader:
     def test_load_from_existing_file(self):
         """Test loading from existing CSV file."""
         test_data = pd.DataFrame(
-            {"DXY_Value": [100.0, 101.0, 102.0]},
+            {"DTWEXBGS_Value": [100.0, 101.0, 102.0]},
             index=pd.date_range("2020-01-01", periods=3, name="time", tz="UTC"),
         )
 
@@ -308,8 +310,8 @@ class TestFREDLoader:
 
             assert isinstance(result, pd.DataFrame)
             assert len(result) == 3
-            assert "DXY_Value" in result.columns
-            assert result["DXY_Value"].tolist() == [100.0, 101.0, 102.0]
+            assert "DTWEXBGS_Value" in result.columns
+            assert result["DTWEXBGS_Value"].tolist() == [100.0, 101.0, 102.0]
 
     @patch("stacking_sats_pipeline.data.fred_loader.FREDLoader.load_from_web")
     @patch("stacking_sats_pipeline.data.fred_loader.FREDLoader.load_from_file")
@@ -341,11 +343,11 @@ class TestFREDLoader:
                     {"OtherColumn": [100.0]},
                     index=pd.date_range("2020-01-01", periods=1, tz="UTC"),
                 ),
-                "DXY_Value",
+                "No value columns found",
             ),
-            (pd.DataFrame(), "DXY_Value"),
+            (pd.DataFrame(), "FRED dataframe is empty"),
             (
-                pd.DataFrame({"DXY_Value": [100.0]}, index=[0]),
+                pd.DataFrame({"DTWEXBGS_Value": [100.0]}, index=[0]),
                 "Index must be DatetimeIndex",
             ),
         ],
@@ -360,7 +362,7 @@ class TestFREDLoader:
     def test_data_validation_success(self):
         """Test successful data validation."""
         valid_df = pd.DataFrame(
-            {"DXY_Value": [100.0, 101.0]},
+            {"DTWEXBGS_Value": [100.0, 101.0]},
             index=pd.date_range("2020-01-01", periods=2, name="time", tz="UTC"),
         )
         loader = FREDLoader(api_key="test_key")
@@ -456,7 +458,7 @@ class TestMultiSourceIntegration:
             df = load_data("fred")
             assert isinstance(df, pd.DataFrame)
             assert len(df) == 3
-            assert "DXY_Value" in df.columns
+            assert "DTWEXBGS_Value" in df.columns
 
     @patch("stacking_sats_pipeline.data.data_loader.MultiSourceDataLoader.load_from_source")
     def test_load_and_merge_with_fred(self, mock_load_from_source):
@@ -498,7 +500,7 @@ class TestBackwardCompatibility:
 
         mock_loader = MagicMock()
         mock_df = pd.DataFrame(
-            {"DXY_Value": [100.0]},
+            {"DTWEXBGS_Value": [100.0]},
             index=pd.date_range("2020-01-01", periods=1, tz="UTC"),
         )
         mock_loader.load_from_web.return_value = mock_df
@@ -507,7 +509,7 @@ class TestBackwardCompatibility:
 
         # Test load function
         result = load_dxy_data_from_web(api_key="test_key")
-        mock_loader_class.assert_called_with(api_key="test_key")
+        mock_loader_class.assert_called_with(api_key="test_key", series_ids=["DTWEXBGS"])
         mock_loader.load_from_web.assert_called_once()
         assert isinstance(result, pd.DataFrame)
 
@@ -517,8 +519,8 @@ class TestBackwardCompatibility:
 
         # Test extract function
         extract_dxy_data_to_csv(local_path="/tmp/test.csv", api_key="test_key")
-        mock_loader_class.assert_called_with(api_key="test_key")
-        mock_loader.extract_to_csv.assert_called_once_with("/tmp/test.csv")
+        mock_loader_class.assert_called_with(api_key="test_key", series_ids=["DTWEXBGS"])
+        mock_loader.load_from_web.assert_called_once()
 
 
 @pytest.mark.integration

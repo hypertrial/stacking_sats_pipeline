@@ -76,7 +76,7 @@ class MultiSourceDataLoader:
 
         # Add FRED loader only if API key is available
         try:
-            fred_loader = FREDLoader(self.data_dir)
+            fred_loader = FREDLoader(self.data_dir, series_ids=list(FREDLoader.ALL_SERIES.keys()))
             self.loaders["fred"] = fred_loader
             logging.info("FRED loader registered successfully")
         except ValueError as e:
